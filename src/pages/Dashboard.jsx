@@ -27,7 +27,6 @@ const Dashboard = () => {
       navigate('/login');
     } else if (userData) {
       setUser(JSON.parse(userData));
-      // Mock notification fetch
       setUnreadCount(2); 
     }
   }, [navigate]);
@@ -40,7 +39,6 @@ const Dashboard = () => {
 
   if (!user) return <div className="min-h-screen bg-[#050810] text-blue-400 flex items-center justify-center font-mono animate-pulse tracking-widest uppercase text-sm text-center px-4">Initializing Systems...</div>;
 
-  // JARGON REMOVED: Clear, outcome-driven naming conventions
   const systemModules = [
     { title: "Secure Deal Rooms", path: "/deals", icon: <Briefcase size={20} className="text-blue-400" />, desc: "Manage financial proposals in a private environment.", badge: "2 Active", highlight: true },
     { title: "Skill Exchange", path: "/skill-exchange", icon: <RefreshCcw size={20} className="text-cyan-400" />, desc: "Trade professional skills directly with other founders.", badge: "1 Pending" },
@@ -51,27 +49,25 @@ const Dashboard = () => {
   ];
 
   return (
-    // Added pb-24 so content doesn't hide behind mobile bottom nav
     <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-blue-500/30 relative overflow-hidden pb-24 md:pb-10">
       
       <NotificationCenter isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} onUnreadUpdate={setUnreadCount} />
 
-      {/* Background: Reduced grid visibility for lower cognitive load */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/5 via-[#050810] to-[#050810] pointer-events-none"></div>
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none opacity-50"></div>
 
-      {/* TOP NAVIGATION BAR */}
+      {/* TOP NAVIGATION BAR: Desktop layout restored and perfectly balanced */}
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#050810]/90 border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-4">
           
-          <div className="flex items-center">
-            <Link to="/" className="w-10 h-10 shrink-0 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:scale-105 transition-transform">
+          <div className="flex items-center shrink-0">
+            <Link to="/" className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:scale-105 transition-transform">
               <span className="text-white text-xl font-black">B</span>
             </Link>
           </div>
 
-          {/* DESKTOP SEARCH: Increased width & prominence */}
-          <div className="flex-1 max-w-2xl relative group hidden md:block">
+          {/* DESKTOP SEARCH: Restored to max-w-xl and centered perfectly */}
+          <div className="flex-1 max-w-xl relative group hidden md:block mx-6">
             <input 
               type="text" placeholder="Search people, deals, skills, events..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && searchQuery.trim() && navigate(`/search?q=${encodeURIComponent(searchQuery)}`)}
@@ -80,7 +76,7 @@ const Dashboard = () => {
             <Search size={16} className="absolute left-5 top-3.5 text-gray-500" />
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-4">
+          <div className="flex items-center gap-1 sm:gap-4 shrink-0">
             <button 
               onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)} 
               className="md:hidden p-2.5 text-gray-400 hover:text-white transition rounded-full hover:bg-white/5"
@@ -89,6 +85,10 @@ const Dashboard = () => {
             </button>
 
             <div className="flex items-center gap-1 sm:gap-2 border-r border-white/10 pr-2 sm:pr-4">
+              {/* RESTORED: Messages Icon for Desktop */}
+              <Link to="/messages" className="hidden md:flex p-2.5 text-gray-400 hover:text-rose-400 transition rounded-full hover:bg-white/5" title="Encrypted Messages">
+                <MessageSquareLock size={20} />
+              </Link>
               <button onClick={() => setIsNotifOpen(true)} className="relative p-2.5 text-gray-400 hover:text-blue-400 transition rounded-full hover:bg-white/5" title="System Alerts">
                 <Bell size={20} />
                 {unreadCount > 0 && <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#050810]"></span>}
@@ -136,23 +136,23 @@ const Dashboard = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8 relative z-10">
         
-        {/* HERO SECTION: Height reduced, CTAs clearer */}
-        <div className="mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[#0a0f1c] border border-white/5 p-6 rounded-2xl md:rounded-3xl relative overflow-hidden">
+        {/* HERO SECTION: Restored md:p-10 to give desktop back its breathing room */}
+        <div className="mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[#0a0f1c] border border-white/5 p-6 md:p-10 rounded-2xl md:rounded-[2rem] relative overflow-hidden">
           <div className="relative z-10 w-full md:w-auto">
             <div className="text-emerald-400 font-mono text-[10px] tracking-[0.2em] mb-2 uppercase flex items-center gap-2">
               <ShieldCheck size={14} /> System Online
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-1">
+            <h1 className="text-2xl md:text-4xl font-bold text-white tracking-tight mb-2">
               Welcome back, {user.name.split(' ')[0]}.
             </h1>
-            <p className="text-gray-400 text-sm">You have <span className="text-white font-medium">3 pending proposals</span> awaiting review.</p>
+            <p className="text-gray-400 text-sm md:text-base">You have <span className="text-white font-medium">3 pending proposals</span> awaiting review.</p>
           </div>
-          <Link to="/skill-exchange" className="relative z-10 w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2">
+          <Link to="/skill-exchange" className="relative z-10 w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white px-8 py-3.5 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-lg">
             Resume Workspace <ArrowRight size={16} />
           </Link>
         </div>
 
-        {/* KPI STRIP: Added trends/mini analytics */}
+        {/* KPI STRIP */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
           {[
             { label: "Active Deals", value: "2", icon: <Briefcase size={16} className="text-blue-400"/>, trend: "↑ 1 this week", trendUp: true },
@@ -187,14 +187,12 @@ const Dashboard = () => {
                 <Link 
                   to={mod.path} 
                   key={index} 
-                  // Heights reduced, padding tightened for scannability
-                  className={`group relative bg-white/[0.02] border border-white/5 p-5 rounded-2xl transition-all hover:bg-white/[0.04] flex flex-col overflow-hidden ${mod.highlight ? 'ring-1 ring-blue-500/30' : ''}`}
+                  className={`group relative bg-white/[0.02] border border-white/5 p-5 md:p-6 rounded-2xl transition-all hover:bg-white/[0.04] flex flex-col overflow-hidden ${mod.highlight ? 'ring-1 ring-blue-500/30' : ''}`}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="w-10 h-10 bg-black/40 border border-white/10 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
                       {mod.icon}
                     </div>
-                    {/* Skimmable Badges instead of empty space */}
                     {mod.badge && (
                       <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-white/10 text-gray-300">
                         {mod.badge}
@@ -207,7 +205,6 @@ const Dashboard = () => {
                     {mod.desc}
                   </p>
                   
-                  {/* Text-based clear action instead of ambiguous arrow */}
                   <div className="mt-auto flex items-center gap-1 text-[11px] font-bold text-blue-400 uppercase tracking-wider group-hover:text-blue-300 transition-colors">
                     Open Module <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
                   </div>
@@ -219,8 +216,8 @@ const Dashboard = () => {
           {/* RIGHT: RETENTION SIDEBAR */}
           <div className="space-y-6 order-1 xl:order-2">
             
-            {/* NEW: Onboarding Guidance */}
-            <div className="bg-white/[0.02] border border-white/5 p-5 rounded-2xl">
+            {/* Onboarding Guidance */}
+            <div className="bg-white/[0.02] border border-white/5 p-5 md:p-6 rounded-2xl">
               <div className="flex justify-between items-center mb-2">
                 <h2 className="text-sm font-bold text-white">Profile Setup</h2>
                 <span className="text-xs text-blue-400 font-bold">70%</span>
@@ -228,12 +225,12 @@ const Dashboard = () => {
               <div className="w-full bg-black/50 rounded-full h-1.5 mb-4 overflow-hidden">
                 <div className="bg-blue-500 h-1.5 rounded-full w-[70%]"></div>
               </div>
-              <p className="text-xs text-gray-400 mb-3">Complete your profile to unlock advanced AI matches.</p>
+              <p className="text-xs text-gray-400 mb-3 leading-relaxed">Complete your profile to unlock advanced AI matches.</p>
               <Link to="/profile" className="text-xs text-white font-medium underline underline-offset-2 hover:text-blue-400 transition">Add your top skills</Link>
             </div>
 
-            {/* Recommended Action: Elevated contrast (Level 1) */}
-            <div className="bg-gradient-to-br from-cyan-900/40 to-blue-900/20 border border-cyan-500/30 p-5 rounded-2xl relative overflow-hidden group">
+            {/* Recommended Action */}
+            <div className="bg-gradient-to-br from-cyan-900/40 to-blue-900/20 border border-cyan-500/30 p-5 md:p-6 rounded-2xl relative overflow-hidden group">
               <div className="w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center mb-3 text-cyan-400">
                 <BrainCircuit size={16} />
               </div>
@@ -244,10 +241,10 @@ const Dashboard = () => {
               </Link>
             </div>
 
-            {/* Recent Activity Feed: Lower contrast (Level 3) */}
+            {/* Recent Activity Feed */}
             <div>
               <h2 className="text-sm font-bold text-gray-300 mb-3">Recent Activity</h2>
-              <div className="bg-transparent border border-white/5 p-4 rounded-2xl space-y-4">
+              <div className="bg-transparent border border-white/5 p-4 md:p-5 rounded-2xl space-y-4">
                 {[
                   { icon: <Clock size={14} className="text-yellow-400"/>, text: "Deal #0A89 marked as Negotiating", time: "2 hrs ago" },
                   { icon: <CheckCircle2 size={14} className="text-emerald-400"/>, text: "Jane Doe accepted your connection", time: "5 hrs ago" },
@@ -269,7 +266,7 @@ const Dashboard = () => {
         </div>
       </main>
 
-      {/* NEW: MOBILE BOTTOM NAVIGATION (Sticky) */}
+      {/* MOBILE BOTTOM NAVIGATION */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#050810]/95 backdrop-blur-xl border-t border-white/10 z-50 px-6 py-3 flex justify-between items-center pb-safe">
         <Link to="/dashboard" className="flex flex-col items-center gap-1 text-blue-400">
           <Home size={20} />
@@ -286,7 +283,6 @@ const Dashboard = () => {
         <Link to="/messages" className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300 transition relative">
           <MessageSquare size={20} />
           <span className="text-[10px] font-medium">Chat</span>
-          {/* Unread indicator */}
           <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
         </Link>
         <Link to="/profile" className="flex flex-col items-center gap-1 text-gray-500 hover:text-gray-300 transition">
