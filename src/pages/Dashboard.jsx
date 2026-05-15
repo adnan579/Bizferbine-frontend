@@ -56,7 +56,7 @@ const Dashboard = () => {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/5 via-[#050810] to-[#050810] pointer-events-none"></div>
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none opacity-50"></div>
 
-      {/* TOP NAVIGATION BAR: Desktop layout restored and perfectly balanced */}
+      {/* TOP NAVIGATION BAR */}
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#050810]/90 border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-4">
           
@@ -66,7 +66,7 @@ const Dashboard = () => {
             </Link>
           </div>
 
-          {/* DESKTOP SEARCH: Restored to max-w-xl and centered perfectly */}
+          {/* DESKTOP SEARCH */}
           <div className="flex-1 max-w-xl relative group hidden md:block mx-6">
             <input 
               type="text" placeholder="Search people, deals, skills, events..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
@@ -85,7 +85,6 @@ const Dashboard = () => {
             </button>
 
             <div className="flex items-center gap-1 sm:gap-2 border-r border-white/10 pr-2 sm:pr-4">
-              {/* RESTORED: Messages Icon for Desktop */}
               <Link to="/messages" className="hidden md:flex p-2.5 text-gray-400 hover:text-rose-400 transition rounded-full hover:bg-white/5" title="Encrypted Messages">
                 <MessageSquareLock size={20} />
               </Link>
@@ -121,11 +120,13 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* MOBILE SEARCH: FIXED! Added the onKeyDown event to trigger the search */}
         {isMobileSearchOpen && (
           <div className="md:hidden px-4 pb-4 animate-in slide-in-from-top-2">
             <div className="relative">
               <input 
                 type="text" placeholder="Search people, deals, events..." autoFocus value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && searchQuery.trim() && navigate(`/search?q=${encodeURIComponent(searchQuery)}`)}
                 className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-10 py-3 text-sm text-white focus:outline-none focus:border-blue-500/50"
               />
               <Search size={16} className="absolute left-4 top-3.5 text-gray-400" />
@@ -136,7 +137,7 @@ const Dashboard = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8 relative z-10">
         
-        {/* HERO SECTION: Restored md:p-10 to give desktop back its breathing room */}
+        {/* HERO SECTION */}
         <div className="mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[#0a0f1c] border border-white/5 p-6 md:p-10 rounded-2xl md:rounded-[2rem] relative overflow-hidden">
           <div className="relative z-10 w-full md:w-auto">
             <div className="text-emerald-400 font-mono text-[10px] tracking-[0.2em] mb-2 uppercase flex items-center gap-2">
