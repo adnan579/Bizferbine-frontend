@@ -4,7 +4,7 @@ import { X, Upload, Save, Loader2, AlertCircle } from 'lucide-react';
 
 const AddPortfolioModal = ({ isOpen, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
-    title: '', challenge: '', solution: '', result: '', projectUrl: '', githubUrl: ''
+    title: '', challenge: '', solution: '', result: '', projectUrl: '', githubUrl: '', stack: ''
   });
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,8 @@ const AddPortfolioModal = ({ isOpen, onClose, onUpdate }) => {
     data.append('result', formData.result);
     data.append('projectUrl', formData.projectUrl);
     data.append('githubUrl', formData.githubUrl);
-    if (file) data.append('projectImage', file); // Matches upload.single('projectImage') in backend
+    data.append('stack', formData.stack); // New!
+    if (file) data.append('projectImage', file);
 
     try {
       const response = await fetch('https://bizferbine-backend.onrender.com/api/profile/portfolio', {
@@ -35,17 +36,15 @@ const AddPortfolioModal = ({ isOpen, onClose, onUpdate }) => {
       });
 
       const responseData = await response.json();
-
       if (response.ok) {
-        onUpdate(responseData.portfolio); // Update the profile page state
-        setFormData({ title: '', challenge: '', solution: '', result: '', projectUrl: '', githubUrl: '' });
+        onUpdate(responseData.portfolio);
+        setFormData({ title: '', challenge: '', solution: '', result: '', projectUrl: '', githubUrl: '', stack: '' });
         setFile(null);
         onClose();
       } else {
-        setErrorMessage(responseData.message || 'Failed to add case study.');
+        setErrorMessage(responseData.message || 'Failed to deploy case study.');
       }
     } catch (err) {
-      console.error(err);
       setErrorMessage('Server connection error.');
     } finally {
       setLoading(false);
@@ -71,34 +70,34 @@ const AddPortfolioModal = ({ isOpen, onClose, onUpdate }) => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-2">
-            <label className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">Project Name *</label>
-            <input required name="title" value={formData.title} onChange={handleChange} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">Project Name *</label>
+              <input required name="title" value={formData.title} onChange={handleChange} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">Tech Stack (CSV)</label>
+              <input name="stack" value={formData.stack} onChange={handleChange} placeholder="React, Node.js, MongoDB" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">Cover Image</label>
-            <label className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-white/10 rounded-xl hover:border-blue-500/50 transition cursor-pointer">
-              <Upload size={20} className="text-gray-500 mb-2" />
-              <span className="text-[10px] text-gray-500">{file ? file.name : 'Upload Project Image'}</span>
-              <input type="file" hidden onChange={handleFileChange} />
-            </label>
+            <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">The Solution Architecture *</label>
+            <textarea required name="solution" rows="3" value={formData.solution} onChange={handleChange} placeholder="Explain how you built it and the problems you solved..." className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none resize-none" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">The Challenge</label>
-              <textarea name="challenge" rows="3" value={formData.challenge} onChange={handleChange} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none resize-none" />
+              <label className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">Impact Metric</label>
+              <input name="result" value={formData.result} onChange={handleChange} placeholder="e.g. Scaled to 10k users" className="w-full bg-black border border-emerald-500/30 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none" />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">The Solution *</label>
-              <textarea required name="solution" rows="3" value={formData.solution} onChange={handleChange} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none resize-none" />
+              <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Cover Image</label>
+              <label className="flex items-center justify-center h-11 border border-white/10 rounded-xl hover:border-blue-500/50 transition cursor-pointer bg-black">
+                <span className="text-xs text-gray-400 flex items-center gap-2"><Upload size={14}/> {file ? file.name.substring(0,20) : 'Upload Image'}</span>
+                <input type="file" hidden onChange={handleFileChange} />
+              </label>
             </div>
-          </div>
-
-          <div className="space-y-2">
-             <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">The Result / Impact</label>
-             <input name="result" value={formData.result} onChange={handleChange} placeholder="e.g., Increased retention by 40%" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
