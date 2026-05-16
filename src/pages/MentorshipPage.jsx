@@ -1,14 +1,19 @@
 // src/pages/MentorshipPage.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, BrainCircuit, Users, Send, CheckCircle2, XCircle, Search, Plus, Calendar, Clock, Loader2, Sparkles } from 'lucide-react';
+import { 
+  ChevronLeft, BrainCircuit, Users, Send, CheckCircle2, 
+  XCircle, Search, Plus, Calendar, Clock, Loader2, 
+  Sparkles, Star, Target, MessageSquare, ShieldCheck, Award 
+} from 'lucide-react';
 
 const MentorshipPage = () => {
-  const [activeTab, setActiveTab] = useState('active'); // 'active', 'matchmaker', 'apply'
+  // New Tabs: 'workspaces' (Active), 'pending' (Inbox), 'matchmaker' (Discover), 'apply' (Broadcast)
+  const [activeTab, setActiveTab] = useState('workspaces'); 
   const [loading, setLoading] = useState(true);
   
   // Data States
-  const [activeRequests, setActiveRequests] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [algorithmicMatches, setAlgorithmicMatches] = useState([]);
   
   // Form States
@@ -28,12 +33,12 @@ const MentorshipPage = () => {
   } catch (err) { console.error(err); }
 
   // --- FETCH DATA ---
-  const fetchActiveRequests = async () => {
+  const fetchRequests = async () => {
     try {
       const res = await fetch('https://bizferbine-backend.onrender.com/api/mentorship', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
-      if (res.ok) setActiveRequests(await res.json());
+      if (res.ok) setRequests(await res.json());
     } catch (err) { console.error(err); }
   };
 
@@ -54,7 +59,7 @@ const MentorshipPage = () => {
   useEffect(() => {
     if (!loggedInUser?.id) navigate('/login');
     else {
-      fetchActiveRequests();
+      fetchRequests();
       setLoading(false);
     }
   }, [navigate]);
@@ -76,7 +81,7 @@ const MentorshipPage = () => {
       if (res.ok) {
         alert('Mentorship Application Broadcasted Successfully!');
         setApplyForm({ title: '', description: '' });
-        setActiveTab('active');
+        setActiveTab('pending');
       } else {
         const data = await res.json();
         alert(data.message);
@@ -97,7 +102,7 @@ const MentorshipPage = () => {
         alert('Offer Sent to Mentee!');
         setActiveOfferApp(null);
         setOfferMessage('');
-        fetchMatches(); // refresh matches
+        fetchMatches(); 
       } else {
         const data = await res.json();
         alert(data.message);
@@ -112,11 +117,18 @@ const MentorshipPage = () => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({ status })
       });
-      if (res.ok) fetchActiveRequests();
+      if (res.ok) {
+        fetchRequests();
+        if (status === 'Accepted') setActiveTab('workspaces');
+      }
     } catch (err) { console.error(err); }
   };
 
-  if (loading && activeTab === 'active') return <div className="min-h-screen bg-[#050810] text-purple-400 flex items-center justify-center font-mono animate-pulse uppercase tracking-widest">Loading Mentorship Vectors...</div>;
+  // Filter Data for Tabs
+  const pendingRequests = requests.filter(r => r.status === 'Pending');
+  const activeWorkspaces = requests.filter(r => r.status === 'Accepted' || r.status === 'Completed');
+
+  if (loading && activeTab === 'workspaces') return <div className="min-h-screen bg-[#050810] text-purple-400 flex items-center justify-center font-mono animate-pulse uppercase tracking-widest">Loading Mentorship Vectors...</div>;
 
   return (
     <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-purple-500/30 pb-20 relative overflow-hidden">
@@ -124,82 +136,152 @@ const MentorshipPage = () => {
       {/* Background Glow */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none"></div>
 
-      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-[#050810]/70 border-b border-white/5 p-4 flex justify-between items-center">
+      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-[#050810]/80 border-b border-white/5 p-4 flex justify-between items-center">
         <Link to="/dashboard" className="flex items-center gap-2 text-gray-400 hover:text-purple-400 transition group">
           <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
           <span className="font-mono text-xs tracking-widest uppercase">Command Center</span>
         </Link>
       </nav>
 
-      <main className="max-w-6xl mx-auto mt-10 px-6 relative z-10">
+      <main className="max-w-6xl mx-auto mt-8 px-4 sm:px-6 relative z-10">
         
-        <div className="mb-10 text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-6 border-b border-white/5 pb-8">
+        <div className="mb-8 text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-6 border-b border-white/5 pb-8">
           <div>
-            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight flex items-center justify-center md:justify-start gap-4 mb-2">
-              <BrainCircuit className="text-purple-400" size={40} /> Algorithmic <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-500">Mentorship</span>
+            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight flex items-center justify-center md:justify-start gap-4 mb-2">
+              <BrainCircuit className="text-purple-400" size={36} /> Algorithmic <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-500">Mentorship</span>
             </h1>
-            <p className="text-gray-400 text-sm max-w-xl">Accelerate your growth. Connect with industry veterans or guide the next generation of founders.</p>
+            <p className="text-gray-400 text-sm max-w-xl">Accelerate your growth. Connect with verified industry veterans, track your milestones, and build your startup.</p>
           </div>
         </div>
 
-        {/* TABS */}
-        <div className="flex flex-wrap gap-3 mb-8">
-          <button onClick={() => setActiveTab('active')} className={`px-6 py-3 rounded-full text-xs font-bold transition flex items-center gap-2 ${activeTab === 'active' ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]' : 'bg-[#0a0f1c] text-gray-400 border border-white/5 hover:text-white'}`}>
-            <Clock size={16} /> Direct Requests & Active
+        {/* ENHANCED TAB NAVIGATION */}
+        <div className="flex flex-wrap gap-2 md:gap-3 mb-8 bg-[#0a0f1c] p-2 rounded-2xl md:rounded-full border border-white/5 inline-flex">
+          <button onClick={() => setActiveTab('workspaces')} className={`px-5 py-2.5 rounded-xl md:rounded-full text-xs font-bold transition flex items-center gap-2 ${activeTab === 'workspaces' ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]' : 'text-gray-400 hover:text-white'}`}>
+            <Target size={16} /> Active Workspaces
           </button>
-          <button onClick={() => setActiveTab('matchmaker')} className={`px-6 py-3 rounded-full text-xs font-bold transition flex items-center gap-2 ${activeTab === 'matchmaker' ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)]' : 'bg-[#0a0f1c] text-gray-400 border border-white/5 hover:text-white'}`}>
-            <Sparkles size={16} /> Mentor Matchmaker
+          <button onClick={() => setActiveTab('pending')} className={`px-5 py-2.5 rounded-xl md:rounded-full text-xs font-bold transition flex items-center gap-2 relative ${activeTab === 'pending' ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)]' : 'text-gray-400 hover:text-white'}`}>
+            <Clock size={16} /> Inbox
+            {pendingRequests.length > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#050810]"></span>}
           </button>
-          <button onClick={() => setActiveTab('apply')} className={`px-6 py-3 rounded-full text-xs font-bold transition flex items-center gap-2 ${activeTab === 'apply' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-[#0a0f1c] text-gray-400 border border-white/5 hover:text-white'}`}>
-            <Plus size={16} /> Apply for a Mentor
+          <button onClick={() => setActiveTab('matchmaker')} className={`px-5 py-2.5 rounded-xl md:rounded-full text-xs font-bold transition flex items-center gap-2 ${activeTab === 'matchmaker' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'text-gray-400 hover:text-white'}`}>
+            <Sparkles size={16} /> Matchmaker
+          </button>
+          <button onClick={() => setActiveTab('apply')} className={`px-5 py-2.5 rounded-xl md:rounded-full text-xs font-bold transition flex items-center gap-2 ${activeTab === 'apply' ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'text-gray-400 hover:text-white'}`}>
+            <Plus size={16} /> Broadcast Goal
           </button>
         </div>
 
-        {/* TAB 1: ACTIVE REQUESTS */}
-        {activeTab === 'active' && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-bold text-white mb-4">Your Mentorship Connections</h2>
-            {activeRequests.length === 0 ? (
+        {/* TAB 1: ACTIVE WORKSPACES (The Evolution) */}
+        {activeTab === 'workspaces' && (
+          <div className="space-y-6 animate-in fade-in">
+            {activeWorkspaces.length === 0 ? (
+              <div className="text-center py-20 border border-white/5 rounded-3xl bg-gradient-to-b from-[#0a0f1c] to-transparent">
+                <Target size={48} className="mx-auto text-purple-900 mb-4" />
+                <h3 className="text-lg font-bold text-white mb-2">No Active Workspaces Yet</h3>
+                <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">Your mentorship journey starts here. Connect with a mentor to unlock session tracking, goal setting, and shared resources.</p>
+                <div className="flex justify-center gap-4">
+                  <button onClick={() => setActiveTab('matchmaker')} className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-full text-sm font-bold transition shadow-lg">Browse Mentors</button>
+                  <button onClick={() => setActiveTab('apply')} className="bg-white/5 border border-white/10 hover:bg-white/10 text-white px-6 py-2.5 rounded-full text-sm font-bold transition">Broadcast a Goal</button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {activeWorkspaces.map(req => {
+                  const isMentor = req.mentor === loggedInUser.id;
+                  return (
+                    <div key={req._id} className="bg-gradient-to-br from-[#0a0f1c] to-[#050810] border border-purple-500/20 rounded-3xl p-6 relative overflow-hidden group hover:border-purple-500/50 transition-colors">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-[50px] group-hover:bg-purple-500/10 transition-colors"></div>
+                      
+                      <div className="flex justify-between items-start mb-6 relative z-10">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-purple-900/30 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold text-lg">
+                            {isMentor ? 'M' : 'U'}
+                          </div>
+                          <div>
+                            <h3 className="text-white font-bold text-lg">{isMentor ? 'Mentee Workspace' : 'Mentor Workspace'}</h3>
+                            <p className="text-xs text-purple-400 font-mono tracking-widest uppercase">Status: {req.status}</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Lifecycle Progress UI */}
+                      <div className="mb-6 bg-black/40 rounded-xl p-4 border border-white/5">
+                        <div className="flex justify-between text-xs text-gray-400 mb-2 font-bold uppercase tracking-wider">
+                          <span>Mentorship Progress</span>
+                          <span className="text-purple-400">Level 1</span>
+                        </div>
+                        <div className="w-full bg-white/5 rounded-full h-1.5 mb-3">
+                          <div className="bg-gradient-to-r from-purple-600 to-indigo-500 h-1.5 rounded-full w-[25%]"></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mt-4">
+                          <div className="bg-white/5 p-3 rounded-lg text-center">
+                            <div className="text-xl font-black text-white">0</div>
+                            <div className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Sessions</div>
+                          </div>
+                          <div className="bg-white/5 p-3 rounded-lg text-center">
+                            <div className="text-xl font-black text-white">0</div>
+                            <div className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Goals Met</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 relative z-10">
+                        <button className="flex-1 bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-lg">
+                          Enter Workspace <ChevronRight size={16}/>
+                        </button>
+                        <button className="bg-white/5 hover:bg-white/10 text-white p-3 rounded-xl transition border border-white/10">
+                          <MessageSquare size={20}/>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 2: INBOX (Pending Requests) */}
+        {activeTab === 'pending' && (
+          <div className="space-y-6 animate-in fade-in">
+            {pendingRequests.length === 0 ? (
               <div className="text-center py-20 border border-dashed border-white/10 rounded-3xl bg-[#0a0f1c]/50">
-                <Users size={48} className="mx-auto text-gray-600 mb-4" />
-                <p className="text-gray-500 font-mono text-sm uppercase tracking-widest">No active requests.</p>
+                <Clock size={48} className="mx-auto text-gray-700 mb-4" />
+                <p className="text-gray-500 font-mono text-sm uppercase tracking-widest">Inbox is clear.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {activeRequests.map(req => {
+                {pendingRequests.map(req => {
                   const isMentor = req.mentor === loggedInUser.id;
                   return (
-                    <div key={req._id} className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-6 relative flex flex-col">
+                    <div key={req._id} className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-6 flex flex-col">
                       <div className="flex justify-between items-start mb-4">
-                        <span className={`text-[10px] font-mono px-3 py-1 rounded-full uppercase tracking-widest ${
-                          req.status === 'Pending' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' : 
-                          req.status === 'Accepted' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
-                          'bg-red-500/10 text-red-400 border border-red-500/20'
-                        }`}>
-                          {req.status}
+                        <span className="bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-[10px] font-mono px-3 py-1 rounded-full uppercase tracking-widest">
+                          Awaiting Action
                         </span>
-                        <span className="text-[10px] bg-purple-500/10 text-purple-400 px-3 py-1 rounded-full border border-purple-500/20 font-mono uppercase tracking-widest">
-                          {isMentor ? 'You are the Mentor' : 'You are the Mentee'}
+                        <span className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">
+                          {isMentor ? 'Inbound Request' : 'Outbound Request'}
                         </span>
                       </div>
                       
-                      <p className="text-sm text-gray-300 mb-4 bg-black/50 p-4 rounded-xl border border-white/5 italic">"{req.message}"</p>
-                      
-                      {req.scheduledSession && (
-                        <div className="flex items-center gap-2 text-xs text-blue-400 bg-blue-500/10 p-3 rounded-xl border border-blue-500/20 mb-4 font-mono">
-                          <Calendar size={14} /> Requested Time: {new Date(req.scheduledSession).toLocaleString()}
-                        </div>
-                      )}
+                      <div className="bg-black/50 p-4 rounded-xl border border-white/5 mb-4 relative">
+                        <MessageSquare size={14} className="absolute top-4 right-4 text-gray-600" />
+                        <p className="text-sm text-gray-300 italic pr-6">"{req.message}"</p>
+                      </div>
 
                       {/* Mentor Actions */}
-                      {isMentor && req.status === 'Pending' && (
+                      {isMentor ? (
                         <div className="flex gap-3 mt-auto">
-                          <button onClick={() => handleUpdateStatus(req._id, 'Accepted')} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-black py-2.5 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
-                            <CheckCircle2 size={16}/> Accept
+                          <button onClick={() => handleUpdateStatus(req._id, 'Accepted')} className="flex-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border border-emerald-500/30 py-2.5 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
+                            <CheckCircle2 size={16}/> Accept Mentee
                           </button>
-                          <button onClick={() => handleUpdateStatus(req._id, 'Declined')} className="flex-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-800/50 py-2.5 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
+                          <button onClick={() => handleUpdateStatus(req._id, 'Declined')} className="flex-1 bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-800/30 py-2.5 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
                             <XCircle size={16}/> Decline
                           </button>
+                        </div>
+                      ) : (
+                        <div className="mt-auto text-center p-3 bg-white/5 rounded-xl border border-white/5 text-xs font-bold text-gray-400">
+                          Waiting for Mentor to review...
                         </div>
                       )}
                     </div>
@@ -210,42 +292,58 @@ const MentorshipPage = () => {
           </div>
         )}
 
-        {/* TAB 2: MENTOR MATCHMAKER */}
+        {/* TAB 3: MENTOR MATCHMAKER (With Trust UI) */}
         {activeTab === 'matchmaker' && (
           <div className="space-y-6 animate-in fade-in">
-            <div className="bg-indigo-900/20 border border-indigo-500/20 p-6 rounded-3xl mb-8 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-blue-900/30 to-indigo-900/10 border border-blue-500/20 p-6 rounded-3xl mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2"><Sparkles className="text-indigo-400"/> AI Matchmaker Active</h2>
-                <p className="text-sm text-indigo-200/70">Scanning the ecosystem for open applications that match your specific industry expertise.</p>
+                <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2"><Sparkles className="text-blue-400"/> Network Scanning Active</h2>
+                <p className="text-sm text-blue-200/70">The algorithm has found users broadcasting goals that match your expertise profile.</p>
               </div>
+              <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-bold transition border border-white/10 whitespace-nowrap">
+                Update My Expertise
+              </button>
             </div>
 
             {loading ? (
-              <div className="text-center py-10"><Loader2 size={32} className="animate-spin text-indigo-400 mx-auto" /></div>
+              <div className="text-center py-10"><Loader2 size={32} className="animate-spin text-blue-400 mx-auto" /></div>
             ) : algorithmicMatches.length === 0 ? (
               <div className="text-center py-20 border border-dashed border-white/10 rounded-3xl bg-[#0a0f1c]/50">
                 <Search size={48} className="mx-auto text-gray-600 mb-4" />
-                <p className="text-gray-500 font-mono text-sm uppercase tracking-widest">No industry matches found right now.</p>
+                <p className="text-gray-500 font-mono text-sm uppercase tracking-widest mb-4">No exact industry matches found right now.</p>
+                <button className="text-blue-400 text-sm font-bold hover:underline">Browse Global Directory</button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {algorithmicMatches.map(app => (
-                  <div key={app._id} className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-6 hover:border-indigo-500/30 transition-all flex flex-col">
-                    <div className="flex items-center gap-3 mb-4 border-b border-white/5 pb-4">
-                      <div className="w-10 h-10 rounded-full bg-[#050810] border border-white/10 flex items-center justify-center font-bold text-white">
-                        {app.mentee?.name?.charAt(0)}
+                  <div key={app._id} className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-6 hover:border-blue-500/30 transition-all flex flex-col group">
+                    <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 p-[2px]">
+                          <div className="w-full h-full rounded-full bg-[#050810] flex items-center justify-center font-bold text-white text-lg">
+                            {app.mentee?.name?.charAt(0)}
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="text-base font-bold text-white flex items-center gap-1">
+                            {app.mentee?.name} <ShieldCheck size={14} className="text-blue-400" />
+                          </h3>
+                          <p className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">{app.industry}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-white">{app.mentee?.name}</h3>
-                        <p className="text-[10px] font-mono text-indigo-400 uppercase tracking-widest">{app.industry}</p>
+                      {/* Trust Marker Mockup */}
+                      <div className="flex flex-col items-end">
+                        <div className="flex items-center gap-1 text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded-md mb-1">
+                          <Star size={12} className="fill-yellow-400" /> <span className="text-xs font-bold">New</span>
+                        </div>
                       </div>
                     </div>
                     
                     <h4 className="text-md font-bold text-white mb-2">{app.title}</h4>
-                    <p className="text-sm text-gray-400 mb-6 flex-1">{app.description}</p>
+                    <p className="text-sm text-gray-400 mb-6 flex-1 line-clamp-3">{app.description}</p>
                     
-                    <button onClick={() => setActiveOfferApp(app)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.3)]">
-                      <Send size={16}/> Send Mentorship Offer
+                    <button onClick={() => setActiveOfferApp(app)} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-lg group-hover:shadow-[0_0_20px_rgba(37,99,235,0.3)]">
+                      <Send size={16}/> Dispatch Mentorship Offer
                     </button>
                   </div>
                 ))}
@@ -254,35 +352,38 @@ const MentorshipPage = () => {
           </div>
         )}
 
-        {/* TAB 3: APPLY FOR MENTOR */}
+        {/* TAB 4: BROADCAST GOAL (Apply) */}
         {activeTab === 'apply' && (
-          <div className="max-w-2xl mx-auto bg-[#0a0f1c] border border-white/10 rounded-3xl p-8 shadow-2xl animate-in zoom-in-95">
-            <h2 className="text-2xl font-black text-white mb-2">Deploy Mentorship Application</h2>
-            <p className="text-sm text-gray-400 mb-8">Broadcast your goals to the network. Our algorithm will notify verified mentors in your industry.</p>
+          <div className="max-w-2xl mx-auto bg-[#0a0f1c] border border-white/10 rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 mt-4">
+            <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mb-6">
+              <Award size={24} />
+            </div>
+            <h2 className="text-2xl font-black text-white mb-2">Broadcast a Mentorship Goal</h2>
+            <p className="text-sm text-gray-400 mb-8 leading-relaxed">Stop guessing. Define exactly what you are trying to achieve, and our algorithm will route your goal to verified mentors with the specific skills you need.</p>
             
             <form onSubmit={handleApply} className="space-y-5">
               <div className="space-y-2">
-                <label className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">Target Goal / Title</label>
-                <input required type="text" value={applyForm.title} onChange={(e) => setApplyForm({...applyForm, title: e.target.value})} placeholder="e.g. Need guidance scaling a SaaS startup" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none transition" />
+                <label className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">Target Objective</label>
+                <input required type="text" value={applyForm.title} onChange={(e) => setApplyForm({...applyForm, title: e.target.value})} placeholder="e.g. Need guidance scaling a SaaS startup from 10 to 100 users" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">Detailed Context</label>
-                <textarea required rows="5" value={applyForm.description} onChange={(e) => setApplyForm({...applyForm, description: e.target.value})} placeholder="Explain where you are currently at, the roadblocks you are facing, and exactly what kind of guidance you need..." className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none resize-none transition" />
+                <label className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">Current Context & Roadblocks</label>
+                <textarea required rows="5" value={applyForm.description} onChange={(e) => setApplyForm({...applyForm, description: e.target.value})} placeholder="Explain where you are currently at, the roadblocks you are facing, and what a successful outcome looks like..." className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none resize-none transition" />
               </div>
-              <button disabled={isApplying} type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.4)] mt-4">
-                {isApplying ? <Loader2 size={18} className="animate-spin" /> : 'Publish to Algorithm'}
+              <button disabled={isApplying} type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] mt-4">
+                {isApplying ? <Loader2 size={18} className="animate-spin" /> : 'Publish to Ecosystem'}
               </button>
             </form>
           </div>
         )}
       </main>
 
-      {/* OFFER MODAL */}
+      {/* OFFER MODAL (Unchanged but styled better) */}
       {activeOfferApp && (
         <div className="fixed inset-0 z-[100] flex justify-center items-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg bg-[#0a0f1c] border border-indigo-500/30 rounded-3xl shadow-[0_0_50px_rgba(79,70,229,0.15)] p-8 animate-in zoom-in-95 duration-200">
-            <h2 className="text-xl font-black text-white tracking-tight mb-2">Send Mentorship Offer</h2>
-            <p className="text-sm text-gray-400 mb-6">Offering guidance to <span className="text-indigo-400 font-bold">{activeOfferApp.mentee?.name}</span></p>
+          <div className="w-full max-w-lg bg-[#0a0f1c] border border-blue-500/30 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.15)] p-8 animate-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-black text-white tracking-tight mb-2">Draft Mentorship Offer</h2>
+            <p className="text-sm text-gray-400 mb-6">Offering guidance to <span className="text-blue-400 font-bold">{activeOfferApp.mentee?.name}</span></p>
             
             <form onSubmit={handleSendOffer} className="space-y-4">
               <textarea 
@@ -290,11 +391,11 @@ const MentorshipPage = () => {
                 value={offerMessage} 
                 onChange={(e) => setOfferMessage(e.target.value)} 
                 placeholder="Introduce yourself, explain how your experience aligns with their problem, and propose a next step..." 
-                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 outline-none resize-none transition" 
+                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none resize-none transition" 
               />
               <div className="flex gap-3">
                 <button type="button" onClick={() => setActiveOfferApp(null)} className="flex-1 bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl text-sm font-bold transition">Cancel</button>
-                <button type="submit" className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.4)]">
+                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.4)]">
                   <Send size={16} /> Dispatch Offer
                 </button>
               </div>
@@ -308,3 +409,6 @@ const MentorshipPage = () => {
 };
 
 export default MentorshipPage;
+
+// Mock ChevronRight Icon component just in case it wasn't imported from lucide-react above.
+const ChevronRight = ({size}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
