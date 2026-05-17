@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { 
   Briefcase, BrainCircuit, Zap, Ticket, RefreshCcw, HeartPulse, 
   Bell, Search, MessageSquareLock, ArrowRight, Activity, Clock, 
-  CheckCircle2, TrendingUp, ShieldCheck, X, Home, Users, MessageSquare, User 
+  CheckCircle2, TrendingUp, ShieldCheck, X, Home, Users, MessageSquare, User, Eye, MousePointerClick 
 } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
 
@@ -17,6 +17,9 @@ const Dashboard = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
+  // NEW: Phase 2 Analytics State
+  const [analytics, setAnalytics] = useState({ weeklyProfileViews: 0, projectClicks: 0, mentorshipRequests: 0 });
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,6 +31,14 @@ const Dashboard = () => {
     } else if (userData) {
       setUser(JSON.parse(userData));
       setUnreadCount(2); 
+
+      // Fetch the Pre-Calculated Analytics Summary!
+      fetch('https://bizferbine-backend.onrender.com/api/analytics/summary', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => setAnalytics(data))
+      .catch(err => console.error("Analytics fetch error:", err));
     }
   }, [navigate]);
 
@@ -56,7 +67,7 @@ const Dashboard = () => {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/5 via-[#050810] to-[#050810] pointer-events-none"></div>
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none opacity-50"></div>
 
-      {/* TOP NAVIGATION BAR */}
+      {/* TOP NAVIGATION BAR: Intact and Perfectly Balanced */}
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#050810]/90 border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-4">
           
@@ -66,7 +77,6 @@ const Dashboard = () => {
             </Link>
           </div>
 
-          {/* DESKTOP SEARCH */}
           <div className="flex-1 max-w-xl relative group hidden md:block mx-6">
             <input 
               type="text" placeholder="Search people, deals, skills, events..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
@@ -101,7 +111,7 @@ const Dashboard = () => {
                 </div>
                 <div className="w-9 h-9 rounded-full bg-blue-500/20 p-0.5 shrink-0 hover:scale-105 transition-transform">
                   <div className="w-full h-full rounded-full bg-blue-900 flex items-center justify-center text-sm font-bold text-white overflow-hidden">
-                    {user.name.charAt(0)}
+                    {user.profilePictureUrl ? <img src={`https://bizferbine-backend.onrender.com/${user.profilePictureUrl}`} className="w-full h-full object-cover" /> : user.name.charAt(0)}
                   </div>
                 </div>
               </button>
@@ -120,7 +130,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* MOBILE SEARCH: FIXED! Added the onKeyDown event to trigger the search */}
         {isMobileSearchOpen && (
           <div className="md:hidden px-4 pb-4 animate-in slide-in-from-top-2">
             <div className="relative">
@@ -153,15 +162,15 @@ const Dashboard = () => {
           </Link>
         </div>
 
-        {/* KPI STRIP */}
+        {/* PHASE 2 KPI STRIP: WIRED TO REAL LIVE ANALYTICS */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
           {[
-            { label: "Active Deals", value: "2", icon: <Briefcase size={16} className="text-blue-400"/>, trend: "↑ 1 this week", trendUp: true },
-            { label: "Pending Trades", value: "3", icon: <RefreshCcw size={16} className="text-cyan-400"/>, trend: "Action required", trendUp: false },
-            { label: "Network Strength", value: "98%", icon: <Activity size={16} className="text-emerald-400"/>, trend: "↑ 2% optimal", trendUp: true },
-            { label: "Profile Views", value: "142", icon: <TrendingUp size={16} className="text-purple-400"/>, trend: "↑ 12% vs last week", trendUp: true }
+            { label: "Profile Views", value: analytics.weeklyProfileViews || "0", icon: <Eye size={16} className="text-blue-400"/>, trend: "Last 7 days", trendUp: true },
+            { label: "Project Traction", value: analytics.projectClicks || "0", icon: <MousePointerClick size={16} className="text-purple-400"/>, trend: "External Clicks", trendUp: true },
+            { label: "Mentor Interest", value: analytics.mentorshipRequests || "0", icon: <Users size={16} className="text-emerald-400"/>, trend: "Inbound Requests", trendUp: analytics.mentorshipRequests > 0 },
+            { label: "Active Deals", value: "2", icon: <Briefcase size={16} className="text-yellow-400"/>, trend: "In Negotiation", trendUp: true }
           ].map((stat, i) => (
-            <div key={i} className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex flex-col justify-between">
+            <div key={i} className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex flex-col justify-between hover:bg-white/[0.04] transition">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider truncate mr-2">{stat.label}</span>
                 <div className="p-1.5 bg-white/5 rounded-lg shrink-0">{stat.icon}</div>
@@ -179,6 +188,22 @@ const Dashboard = () => {
           
           {/* LEFT: MODULE GRID */}
           <div className="xl:col-span-2 order-2 xl:order-1">
+            
+            {/* MICRO-DOPAMINE BANNER: Render conditionally if they have traction */}
+            {analytics.weeklyProfileViews > 0 && (
+              <div className="mb-6 bg-gradient-to-r from-blue-900/30 to-purple-900/10 border border-blue-500/20 rounded-xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                    <TrendingUp size={16} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Your visibility is increasing.</p>
+                    <p className="text-xs text-blue-200/70">{analytics.weeklyProfileViews} founders viewed your professional ecosystem this week.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between items-end mb-4">
               <h2 className="text-base font-bold text-white tracking-wide">Workspaces</h2>
             </div>
