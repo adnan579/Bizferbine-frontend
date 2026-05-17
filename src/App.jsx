@@ -21,6 +21,8 @@ import MentorshipPage from './pages/MentorshipPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+
 
 function App() {
 
@@ -61,6 +63,7 @@ function App() {
         <Route path="/admin" element={<AdminPanelPage />} />
         <Route path="/admin-login" element={<AdminLoginPage />} />
         <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
       </Routes>
       <Analytics />
     </Router>
