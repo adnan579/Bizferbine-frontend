@@ -4,9 +4,51 @@ import { useNavigate, Link } from 'react-router-dom';
 import { 
   Briefcase, BrainCircuit, Zap, Ticket, RefreshCcw, HeartPulse, 
   Bell, Search, MessageSquareLock, ArrowRight, Activity, Clock, 
-  CheckCircle2, TrendingUp, ShieldCheck, X, Home, Users, MessageSquare, User, Eye, MousePointerClick 
+  CheckCircle2, TrendingUp, ShieldCheck, X, Home, Users, MessageSquare, 
+  User, Eye, MousePointerClick, Code, ExternalLink, Star, UserPlus 
 } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
+
+// --- HELPER FUNCTIONS FOR LIVE ACTIVITY ---
+const timeAgo = (date) => {
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  let interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + " days ago";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + " hrs ago";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + " mins ago";
+  return "Just now";
+};
+
+const getEventDisplay = (event) => {
+  // Safe Fallback: If an anonymous user triggers it, default to "Someone"
+  const actorName = event.actor ? event.actor.name.split(' ')[0] : "Someone";
+  const actorRole = event.actor ? event.actor.role : "A user";
+  
+  switch(event.eventType) {
+    case 'PROFILE_VIEW':
+      return { icon: <Eye size={14} className="text-blue-400"/>, text: `${actorRole} viewed your profile.` };
+    case 'PORTFOLIO_CLICK':
+      return { icon: <MousePointerClick size={14} className="text-purple-400"/>, text: `${actorName} clicked your portfolio.` };
+    case 'GITHUB_CLICK':
+      return { icon: <Code size={14} className="text-gray-400"/>, text: `${actorName} viewed your GitHub.` };
+    case 'LINKEDIN_CLICK':
+      return { icon: <Users size={14} className="text-blue-500"/>, text: `${actorName} checked your LinkedIn.` };
+    case 'WEBSITE_CLICK':
+      return { icon: <ExternalLink size={14} className="text-emerald-400"/>, text: `${actorName} visited your website.` };
+    case 'MENTORSHIP_REQUEST':
+      return { icon: <BrainCircuit size={14} className="text-indigo-400"/>, text: `${actorName} requested mentorship!` };
+    case 'MENTORSHIP_ACCEPTED':
+      return { icon: <CheckCircle2 size={14} className="text-emerald-400"/>, text: `${actorName} accepted your request.` };
+    case 'REVIEW_RECEIVED':
+      return { icon: <Star size={14} className="text-yellow-400"/>, text: `${actorName} left you a review.` };
+    case 'FOLLOW':
+      return { icon: <UserPlus size={14} className="text-blue-400"/>, text: `${actorName} started following you.` };
+    default:
+      return { icon: <Activity size={14} className="text-gray-400"/>, text: `${actorName} interacted with your profile.` };
+  }
+};
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
@@ -17,8 +59,8 @@ const Dashboard = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
-  // NEW: Phase 2 Analytics State
   const [analytics, setAnalytics] = useState({ weeklyProfileViews: 0, projectClicks: 0, mentorshipRequests: 0 });
+  const [recentPulse, setRecentPulse] = useState([]); // NEW: Real-time pulse state
 
   const navigate = useNavigate();
 
@@ -32,12 +74,15 @@ const Dashboard = () => {
       setUser(JSON.parse(userData));
       setUnreadCount(2); 
 
-      // Fetch the Pre-Calculated Analytics Summary!
+      // Fetch the Bundled Analytics Payload
       fetch('https://bizferbine-backend.onrender.com/api/analytics/summary', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       .then(res => res.json())
-      .then(data => setAnalytics(data))
+      .then(data => {
+        setAnalytics(data.summary || { weeklyProfileViews: 0, projectClicks: 0, mentorshipRequests: 0 });
+        setRecentPulse(data.recentPulse || []); // Hydrate the live feed
+      })
       .catch(err => console.error("Analytics fetch error:", err));
     }
   }, [navigate]);
@@ -67,7 +112,6 @@ const Dashboard = () => {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/5 via-[#050810] to-[#050810] pointer-events-none"></div>
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none opacity-50"></div>
 
-      {/* TOP NAVIGATION BAR: Intact and Perfectly Balanced */}
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#050810]/90 border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-4">
           
@@ -146,7 +190,6 @@ const Dashboard = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8 relative z-10">
         
-        {/* HERO SECTION */}
         <div className="mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[#0a0f1c] border border-white/5 p-6 md:p-10 rounded-2xl md:rounded-[2rem] relative overflow-hidden">
           <div className="relative z-10 w-full md:w-auto">
             <div className="text-emerald-400 font-mono text-[10px] tracking-[0.2em] mb-2 uppercase flex items-center gap-2">
@@ -162,7 +205,6 @@ const Dashboard = () => {
           </Link>
         </div>
 
-        {/* PHASE 2 KPI STRIP: WIRED TO REAL LIVE ANALYTICS */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
           {[
             { label: "Profile Views", value: analytics.weeklyProfileViews || "0", icon: <Eye size={16} className="text-blue-400"/>, trend: "Last 7 days", trendUp: true },
@@ -183,13 +225,10 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* MAIN CONTENT SPLIT */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
           
-          {/* LEFT: MODULE GRID */}
           <div className="xl:col-span-2 order-2 xl:order-1">
             
-            {/* MICRO-DOPAMINE BANNER: Render conditionally if they have traction */}
             {analytics.weeklyProfileViews > 0 && (
               <div className="mb-6 bg-gradient-to-r from-blue-900/30 to-purple-900/10 border border-blue-500/20 rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -239,10 +278,8 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* RIGHT: RETENTION SIDEBAR */}
           <div className="space-y-6 order-1 xl:order-2">
             
-            {/* Onboarding Guidance */}
             <div className="bg-white/[0.02] border border-white/5 p-5 md:p-6 rounded-2xl">
               <div className="flex justify-between items-center mb-2">
                 <h2 className="text-sm font-bold text-white">Profile Setup</h2>
@@ -255,7 +292,6 @@ const Dashboard = () => {
               <Link to="/profile" className="text-xs text-white font-medium underline underline-offset-2 hover:text-blue-400 transition">Add your top skills</Link>
             </div>
 
-            {/* Recommended Action */}
             <div className="bg-gradient-to-br from-cyan-900/40 to-blue-900/20 border border-cyan-500/30 p-5 md:p-6 rounded-2xl relative overflow-hidden group">
               <div className="w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center mb-3 text-cyan-400">
                 <BrainCircuit size={16} />
@@ -267,23 +303,30 @@ const Dashboard = () => {
               </Link>
             </div>
 
-            {/* Recent Activity Feed */}
+            {/* REAL-TIME DYNAMIC ACTIVITY FEED */}
             <div>
               <h2 className="text-sm font-bold text-gray-300 mb-3">Recent Activity</h2>
               <div className="bg-transparent border border-white/5 p-4 md:p-5 rounded-2xl space-y-4">
-                {[
-                  { icon: <Clock size={14} className="text-yellow-400"/>, text: "Deal #0A89 marked as Negotiating", time: "2 hrs ago" },
-                  { icon: <CheckCircle2 size={14} className="text-emerald-400"/>, text: "Jane Doe accepted your connection", time: "5 hrs ago" },
-                  { icon: <Zap size={14} className="text-purple-400"/>, text: "Your insight reached 150 views", time: "1 day ago" }
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-3 items-start opacity-80 hover:opacity-100 transition-opacity">
-                    <div className="mt-0.5 shrink-0 bg-white/5 p-1.5 rounded-md">{item.icon}</div>
-                    <div>
-                      <p className="text-xs text-gray-300 leading-tight">{item.text}</p>
-                      <p className="text-[10px] text-gray-600 mt-1">{item.time}</p>
-                    </div>
+                {recentPulse.length === 0 ? (
+                  <div className="text-center py-6 border border-dashed border-white/5 rounded-xl">
+                    <Activity size={24} className="mx-auto text-gray-600 mb-2" />
+                    <p className="text-xs text-gray-500 font-mono uppercase tracking-widest">Network pulse is quiet</p>
+                    <p className="text-[10px] text-gray-600 mt-1">Broadcast an insight to generate traction.</p>
                   </div>
-                ))}
+                ) : (
+                  recentPulse.map((event, i) => {
+                    const display = getEventDisplay(event);
+                    return (
+                      <div key={event._id || i} className="flex gap-3 items-start opacity-80 hover:opacity-100 transition-opacity">
+                        <div className="mt-0.5 shrink-0 bg-white/5 p-1.5 rounded-md">{display.icon}</div>
+                        <div>
+                          <p className="text-xs text-gray-300 leading-tight">{display.text}</p>
+                          <p className="text-[10px] text-gray-600 mt-1">{timeAgo(event.createdAt)}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -292,7 +335,6 @@ const Dashboard = () => {
         </div>
       </main>
 
-      {/* MOBILE BOTTOM NAVIGATION */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#050810]/95 backdrop-blur-xl border-t border-white/10 z-50 px-6 py-3 flex justify-between items-center pb-safe">
         <Link to="/dashboard" className="flex flex-col items-center gap-1 text-blue-400">
           <Home size={20} />
