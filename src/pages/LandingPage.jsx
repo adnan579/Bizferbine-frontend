@@ -1,11 +1,13 @@
 // src/pages/LandingPage.jsx
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Zap } from 'lucide-react';
+import FeedbackModal from '../components/FeedbackModal'; // Adjust path if needed!
 
 const LandingPage = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false); // NEW STATE
 
-  // Rewritten features: Clear, outcome-driven, and jargon-free
   const features = [
     { icon: "🧠", title: "AI Mentorship Matching", desc: "Find mentors and mentees based on skill compatibility and startup goals." },
     { icon: "💼", title: "Secure Deal Rooms", desc: "Pitch investors and manage financial proposals in a private, encrypted environment." },
@@ -18,11 +20,14 @@ const LandingPage = () => {
     { icon: "💬", title: "Encrypted Messaging", desc: "Communicate securely with private, low-latency direct messaging." }
   ];
 
-  const backendFlexTech = ['Node.js', 'Express.js', 'MongoDB Atlas', 'Regex Matchmaking', 'Parallel Queries', 'Barter Logic', 'CORS Security', 'JWT Auth', 'Bcrypt Encryption', 'AWS Architecture', 'Stripe Gateway', 'WebSockets'];
+  const backendFlexTech = ['Node.js', 'Express.js', 'MongoDB Atlas', 'Regex Matchmaking', 'Parallel Queries', 'Barter Logic', 'CORS Security', 'JWT Auth', 'Bcrypt Encryption', 'AWS Architecture', 'Razorpay Gateway', 'WebSockets'];
 
   return (
     <div className="min-h-screen bg-[#020408] text-gray-200 font-sans selection:bg-blue-500/30">
       
+      {/* THE MODAL COMPONENT */}
+      <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} />
+
       {/* Navbar (Mobile Optimized) */}
       <nav className="fixed w-full z-50 top-0 transition-all backdrop-blur-md bg-[#020408]/80 border-b border-white/5 p-4 md:p-5">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -33,7 +38,6 @@ const LandingPage = () => {
             BizFerbine
           </div>
 
-          {/* Desktop Nav */}
           <div className="hidden md:flex space-x-8 items-center">
             <a href="#features" className="text-sm font-medium text-gray-400 hover:text-white transition">Features</a>
             <a href="#how-it-works" className="text-sm font-medium text-gray-400 hover:text-white transition">How it Works</a>
@@ -43,7 +47,6 @@ const LandingPage = () => {
             </Link>
           </div>
 
-          {/* Mobile Hamburger Button */}
           <button 
             className="md:hidden text-white p-2"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -54,7 +57,6 @@ const LandingPage = () => {
           </button>
         </div>
 
-        {/* Mobile Nav Dropdown */}
         {isMobileMenuOpen && (
           <div className="md:hidden absolute top-full left-0 w-full bg-[#050810] border-b border-white/5 p-4 flex flex-col gap-4 shadow-xl">
             <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 font-medium p-2">Features</a>
@@ -65,9 +67,8 @@ const LandingPage = () => {
         )}
       </nav>
 
-      {/* Hero Section (Clear Message, Mobile Stacked CTAs) */}
+      {/* Hero Section */}
       <main className="relative pt-32 pb-16 md:pt-48 md:pb-24 overflow-hidden px-4">
-        {/* Optimized Glow Backgrounds */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-blue-600/20 rounded-full blur-[100px] md:blur-[150px] pointer-events-none"></div>
 
         <div className="relative max-w-4xl mx-auto text-center z-10">
@@ -94,7 +95,6 @@ const LandingPage = () => {
         </div>
       </main>
 
-      {/* NEW: Social Proof Section */}
       <section className="py-10 border-y border-white/5 bg-white/[0.02] relative z-10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-white/5">
@@ -118,7 +118,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* NEW: How it Works (Simplified Mental Model) */}
       <section id="how-it-works" className="py-20 md:py-32 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
@@ -127,7 +126,6 @@ const LandingPage = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* Steps */}
             <div className="bg-[#050810] border border-white/5 p-8 rounded-2xl text-center relative z-10">
               <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center text-xl font-black mx-auto mb-6">1</div>
               <h3 className="text-xl font-bold text-white mb-3">Create Your Profile</h3>
@@ -147,7 +145,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Features Grid (Mobile single-column, clear benefits) */}
       <section id="features" className="py-20 md:py-32 bg-white/[0.02] border-y border-white/5 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16 md:mb-20">
@@ -169,7 +166,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Architecture Showcase (Technical Trust) */}
       <section className="py-20 md:py-32 relative z-10 bg-[#020408]">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <h2 className="text-2xl md:text-4xl font-bold text-white mb-4">Built on Enterprise Technology</h2>
@@ -190,21 +186,39 @@ const LandingPage = () => {
         <div className="max-w-4xl mx-auto text-center px-6 mb-20">
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Ready to expand your network?</h2>
           <p className="text-gray-400 mb-8 max-w-xl mx-auto">Join thousands of professionals already building their future on BizFerbine.</p>
-          <Link to="/register" className="w-full sm:w-auto inline-block bg-white text-black hover:bg-gray-200 px-10 py-4 rounded-xl md:rounded-full text-base md:text-lg font-bold transition shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:scale-105">
-            Create Free Account
-          </Link>
+          
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 w-full">
+            <Link to="/register" className="w-full sm:w-auto inline-block bg-white text-black hover:bg-gray-200 px-10 py-4 rounded-xl md:rounded-full text-base md:text-lg font-bold transition shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:scale-105">
+              Create Free Account
+            </Link>
+            
+            {/* NEW: THE RAZORPAY / SPONSOR BUTTON */}
+            <a 
+              href="https://rzp.io/l/your_generated_link" // Replace with your actual Razorpay link!
+              target="_blank" 
+              rel="noreferrer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl md:rounded-full text-base md:text-lg font-bold shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all hover:scale-105"
+            >
+              <Zap size={20} className="text-yellow-400" /> Back the Ecosystem
+            </a>
+          </div>
         </div>
         
-        {/* Proper Footer Links */}
-        <div className="max-w-7xl mx-auto px-6 border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs md:text-sm text-gray-500">
+        <div className="max-w-7xl mx-auto px-6 border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-6 text-xs md:text-sm text-gray-500">
           <div className="flex items-center gap-2 font-bold text-gray-400">
             <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center text-white text-[10px]">BF</div>
             BizFerbine © {new Date().getFullYear()}
           </div>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap justify-center gap-6">
             <a href="#" className="hover:text-white transition">Privacy Policy</a>
             <a href="#" className="hover:text-white transition">Terms of Service</a>
-            <a href="#" className="hover:text-white transition">Contact Support</a>
+            {/* NEW: LEAVE A FEEDBACK BUTTON */}
+            <button 
+              onClick={() => setIsFeedbackModalOpen(true)} 
+              className="hover:text-white transition text-blue-400 font-bold"
+            >
+              Leave A Feedback
+            </button>
           </div>
         </div>
       </footer>
