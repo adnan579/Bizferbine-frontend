@@ -30,7 +30,10 @@ const AnalyticsPage = () => {
       }).then(res => res.json())
     ])
     .then(([analyticsData, profileData]) => {
-      setAnalytics(analyticsData);
+      // FIX: The backend now returns { summary: {...}, recentPulse: [...] }
+      // We must extract the 'summary' object here!
+      setAnalytics(analyticsData.summary || { weeklyProfileViews: 0, projectClicks: 0, mentorshipRequests: 0 });
+      
       if (profileData.reputation) setReputation(profileData.reputation);
       setLoading(false);
     })
