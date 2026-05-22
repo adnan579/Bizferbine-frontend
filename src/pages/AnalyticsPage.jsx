@@ -20,7 +20,6 @@ const AnalyticsPage = () => {
 
     const userId = JSON.parse(userStr).id;
 
-    // Fetch both Analytics Summary and Profile (to get the live Reputation Score)
     Promise.all([
       fetch('https://bizferbine-backend.onrender.com/api/analytics/summary', {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -30,10 +29,7 @@ const AnalyticsPage = () => {
       }).then(res => res.json())
     ])
     .then(([analyticsData, profileData]) => {
-      // FIX: The backend now returns { summary: {...}, recentPulse: [...] }
-      // We must extract the 'summary' object here!
       setAnalytics(analyticsData.summary || { weeklyProfileViews: 0, projectClicks: 0, mentorshipRequests: 0 });
-      
       if (profileData.reputation) setReputation(profileData.reputation);
       setLoading(false);
     })

@@ -1,8 +1,13 @@
 // src/pages/InsightsPage.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-// IMPORTED SHARE2 ICON
 import { ChevronLeft, Image as ImageIcon, Send, ThumbsUp, MessageSquare, Zap, Loader2, Share2 } from 'lucide-react';
+
+// --- SAFE IMAGE LOADER FOR CLOUDINARY ---
+const getImageUrl = (path) => {
+  if (!path) return '';
+  return path.startsWith('http') ? path : `https://bizferbine-backend.onrender.com/${path}`;
+};
 
 const InsightsPage = () => {
   const [insights, setInsights] = useState([]);
@@ -90,14 +95,11 @@ const InsightsPage = () => {
     } catch (err) { console.error('Failed to like insight:', err); }
   };
 
-  // NEW: HANDLE SHARE
   const handleShare = (insightId) => {
-    // Copies a dummy URL to the clipboard (we can make this a real routing URL later)
     navigator.clipboard.writeText(`${window.location.origin}/insights/${insightId}`);
     alert('Insight link copied to clipboard! 🚀');
   };
 
-  // NEW: HANDLE SUBMITTING A COMMENT
   const handleCommentSubmit = async (e, insightId) => {
     e.preventDefault();
     if (!commentText.trim()) return;
@@ -114,9 +116,8 @@ const InsightsPage = () => {
 
       if (response.ok) {
         const data = await response.json();
-        // Update the specific insight with the new comments array
         setInsights(insights.map(i => i._id === insightId ? data.insight : i));
-        setCommentText(''); // Clear the box
+        setCommentText(''); 
       }
     } catch (err) {
       console.error('Failed to post comment:', err);
@@ -196,9 +197,10 @@ const InsightsPage = () => {
                 <h2 className="text-xl font-bold text-white mb-2">{insight.title}</h2>
                 <p className="text-sm text-gray-300 leading-relaxed mb-4">{insight.content}</p>
 
+                {/* IMPLEMENTED CLOUDINARY SAFE LOADER */}
                 {insight.imageUrl && (
                   <div className="mb-4 rounded-xl overflow-hidden border border-white/5 max-h-80 flex justify-center bg-black">
-                    <img src={`https://bizferbine-backend.onrender.com/${insight.imageUrl}`} alt="Insight attachment" className="object-cover w-full h-full" />
+                    <img src={getImageUrl(insight.imageUrl)} alt="Insight attachment" className="object-cover w-full h-full" />
                   </div>
                 )}
 
@@ -226,10 +228,9 @@ const InsightsPage = () => {
                   </button>
                 </div>
 
-                {/* NEW: EXPANDABLE COMMENTS SECTION */}
+                {/* EXPANDABLE COMMENTS SECTION */}
                 {isCommenting && (
                   <div className="mt-6 pt-6 border-t border-white/5">
-                    {/* List Existing Comments */}
                     <div className="space-y-4 mb-4 max-h-40 overflow-y-auto pr-2">
                       {insight.comments?.length > 0 ? (
                         insight.comments.map((comment, idx) => (
@@ -244,7 +245,6 @@ const InsightsPage = () => {
                         <p className="text-[10px] text-gray-500 font-mono uppercase">No comments yet. Be the first.</p>
                       )}
                     </div>
-                    {/* Add Comment Form */}
                     <form onSubmit={(e) => handleCommentSubmit(e, insight._id)} className="flex gap-2">
                       <input 
                         type="text" 

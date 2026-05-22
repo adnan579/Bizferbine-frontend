@@ -22,7 +22,6 @@ const timeAgo = (date) => {
 };
 
 const getEventDisplay = (event) => {
-  // Safe Fallback: If an anonymous user triggers it, default to "Someone"
   const actorName = event.actor ? event.actor.name.split(' ')[0] : "Someone";
   const actorRole = event.actor ? event.actor.role : "A user";
   
@@ -50,6 +49,12 @@ const getEventDisplay = (event) => {
   }
 };
 
+// --- SAFE IMAGE LOADER FOR CLOUDINARY ---
+const getImageUrl = (path) => {
+  if (!path) return '';
+  return path.startsWith('http') ? path : `https://bizferbine-backend.onrender.com/${path}`;
+};
+
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,7 +65,7 @@ const Dashboard = () => {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const [analytics, setAnalytics] = useState({ weeklyProfileViews: 0, projectClicks: 0, mentorshipRequests: 0 });
-  const [recentPulse, setRecentPulse] = useState([]); // NEW: Real-time pulse state
+  const [recentPulse, setRecentPulse] = useState([]); 
 
   const navigate = useNavigate();
 
@@ -74,14 +79,13 @@ const Dashboard = () => {
       setUser(JSON.parse(userData));
       setUnreadCount(2); 
 
-      // Fetch the Bundled Analytics Payload
       fetch('https://bizferbine-backend.onrender.com/api/analytics/summary', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       .then(res => res.json())
       .then(data => {
         setAnalytics(data.summary || { weeklyProfileViews: 0, projectClicks: 0, mentorshipRequests: 0 });
-        setRecentPulse(data.recentPulse || []); // Hydrate the live feed
+        setRecentPulse(data.recentPulse || []); 
       })
       .catch(err => console.error("Analytics fetch error:", err));
     }
@@ -155,7 +159,8 @@ const Dashboard = () => {
                 </div>
                 <div className="w-9 h-9 rounded-full bg-blue-500/20 p-0.5 shrink-0 hover:scale-105 transition-transform">
                   <div className="w-full h-full rounded-full bg-blue-900 flex items-center justify-center text-sm font-bold text-white overflow-hidden">
-                    {user.profilePictureUrl ? <img src={`https://bizferbine-backend.onrender.com/${user.profilePictureUrl}`} className="w-full h-full object-cover" /> : user.name.charAt(0)}
+                    {/* IMPLEMENTED CLOUDINARY SAFE LOADER */}
+                    {user.profilePictureUrl ? <img src={getImageUrl(user.profilePictureUrl)} className="w-full h-full object-cover" alt="Avatar"/> : user.name.charAt(0)}
                   </div>
                 </div>
               </button>
@@ -303,7 +308,6 @@ const Dashboard = () => {
               </Link>
             </div>
 
-            {/* REAL-TIME DYNAMIC ACTIVITY FEED */}
             <div>
               <h2 className="text-sm font-bold text-gray-300 mb-3">Recent Activity</h2>
               <div className="bg-transparent border border-white/5 p-4 md:p-5 rounded-2xl space-y-4">

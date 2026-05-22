@@ -5,6 +5,12 @@ import { MapPin, Link as LinkIcon, Code, Users, Briefcase, Award, Zap, ChevronLe
 import EditProfileModal from './EditProfileModal';
 import AddPortfolioModal from './AddPortfolioModal';
 
+// --- SAFE IMAGE LOADER FOR CLOUDINARY ---
+const getImageUrl = (path) => {
+  if (!path) return '';
+  return path.startsWith('http') ? path : `https://bizferbine-backend.onrender.com/${path}`;
+};
+
 const ProfilePage = () => {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -149,15 +155,17 @@ const ProfilePage = () => {
         )}
 
         <div className="h-40 md:h-64 w-full bg-gradient-to-r from-blue-900 to-indigo-900 relative rounded-t-3xl overflow-hidden">
-          {profile?.profileBannerUrl && <img src={`https://bizferbine-backend.onrender.com/${profile.profileBannerUrl}`} alt="Banner" className="w-full h-full object-cover opacity-60" />}
+          {/* IMPLEMENTED CLOUDINARY SAFE LOADER */}
+          {profile?.profileBannerUrl && <img src={getImageUrl(profile.profileBannerUrl)} alt="Banner" className="w-full h-full object-cover opacity-60" />}
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1c] to-transparent"></div>
         </div>
 
         <div className="px-5 md:px-8 pb-6 md:pb-8 relative -mt-16 md:-mt-20 flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 text-center md:text-left">
           
           <div className="w-28 h-28 md:w-32 md:h-32 rounded-2xl bg-[#050810] border-2 border-blue-500 p-1 shadow-[0_0_20px_rgba(59,130,246,0.5)] z-10 shrink-0 relative overflow-hidden">
+             {/* IMPLEMENTED CLOUDINARY SAFE LOADER */}
              {profile?.profilePictureUrl ? (
-               <img src={`https://bizferbine-backend.onrender.com/${profile.profilePictureUrl}`} alt="Profile" className="w-full h-full object-cover rounded-xl" />
+               <img src={getImageUrl(profile.profilePictureUrl)} alt="Profile" className="w-full h-full object-cover rounded-xl" />
              ) : (
                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-3xl md:text-4xl font-black text-white">
                  {profile?.name ? profile.name.charAt(0).toUpperCase() : 'U'}
@@ -239,7 +247,6 @@ const ProfilePage = () => {
               </div>
             )}
             
-            {/* NEW: THE ANALYTICS ENTRY POINT (Placed in the marked zone) */}
             {isOwnProfile && (
               <div className="mt-6 pt-6 border-t border-white/5">
                 <Link to="/analytics" className="w-full bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.1)] hover:shadow-[0_0_20px_rgba(37,99,235,0.3)]">
@@ -348,7 +355,8 @@ const ProfilePage = () => {
                   <div key={item._id || index} className="bg-black border border-white/5 rounded-2xl overflow-hidden group flex flex-col relative hover:border-blue-500/30 transition-colors">
                     {isOwnProfile && <button onClick={() => handleDeletePortfolio(item._id)} className="absolute top-2 right-2 p-2 bg-black/60 text-gray-400 hover:text-red-400 rounded-full transition z-20 md:opacity-0 md:group-hover:opacity-100"><Trash2 size={16} /></button>}
                     
-                    {item.imageUrl ? <div className="h-32 w-full overflow-hidden border-b border-white/5"><img src={`https://bizferbine-backend.onrender.com/${item.imageUrl}`} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div> : <div className="h-2 w-full bg-gradient-to-r from-blue-600 to-indigo-600"></div>}
+                    {/* IMPLEMENTED CLOUDINARY SAFE LOADER */}
+                    {item.imageUrl ? <div className="h-32 w-full overflow-hidden border-b border-white/5"><img src={getImageUrl(item.imageUrl)} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div> : <div className="h-2 w-full bg-gradient-to-r from-blue-600 to-indigo-600"></div>}
                     <div className="p-5 flex-1 flex flex-col">
                       <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
                       <p className="text-sm text-gray-400 mb-4">{item.solution}</p>
@@ -388,7 +396,8 @@ const ProfilePage = () => {
                     <div key={insight._id} className="bg-black border border-white/5 rounded-2xl p-5 relative group">
                       {isOwnProfile && <button onClick={() => handleDeleteInsight(insight._id)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-red-400 md:opacity-0 md:group-hover:opacity-100 transition z-20 bg-black/40 rounded-full"><Trash2 size={16} /></button>}
                       
-                      {insight.imageUrl && <img src={`https://bizferbine-backend.onrender.com/${insight.imageUrl}`} alt="Insight" className="w-full h-40 object-cover rounded-xl mb-4" />}
+                      {/* IMPLEMENTED CLOUDINARY SAFE LOADER */}
+                      {insight.imageUrl && <img src={getImageUrl(insight.imageUrl)} alt="Insight" className="w-full h-40 object-cover rounded-xl mb-4" />}
                       <h3 className="text-md font-bold text-white mb-2 pr-10">{insight.title}</h3>
                       <p className="text-sm text-gray-400 mb-4">{insight.content}</p>
                       <div className="flex flex-wrap gap-2 mb-6">
