@@ -1,6 +1,6 @@
 // src/pages/EditProfileModal.jsx
 import { useState, useEffect } from 'react';
-import { X, Upload, Save, Loader2, AlertCircle, User, Briefcase, Link as LinkIcon } from 'lucide-react';
+import { X, Upload, Save, Loader2, AlertCircle, User, Briefcase, Link as LinkIcon, Zap } from 'lucide-react';
 
 const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -14,6 +14,8 @@ const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }) => {
     linkedIn: profile?.socialLinks?.linkedIn || '',
     github: profile?.socialLinks?.github || '',
     website: profile?.socialLinks?.website || '', // NEW
+    activeDirectiveIntent: profile?.activeDirective?.intent || 'None',
+    activeDirectiveText: profile?.activeDirective?.text || '',
   });
   
   const [files, setFiles] = useState({ profilePicture: null, profileBanner: null });
@@ -33,6 +35,8 @@ const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }) => {
         linkedIn: profile.socialLinks?.linkedIn || '',
         github: profile.socialLinks?.github || '',
         website: profile.socialLinks?.website || '',
+        activeDirectiveIntent: profile.activeDirective?.intent || 'None',
+        activeDirectiveText: profile.activeDirective?.text || '',
       });
     }
   }, [profile]);
@@ -60,6 +64,8 @@ const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }) => {
     data.append('linkedIn', formData.linkedIn);
     data.append('github', formData.github);
     data.append('website', formData.website); // Wired to backend
+    data.append('activeDirectiveIntent', formData.activeDirectiveIntent);
+    data.append('activeDirectiveText', formData.activeDirectiveText);
     
     if (files.profilePicture) data.append('profilePicture', files.profilePicture);
     if (files.profileBanner) data.append('profileBanner', files.profileBanner);
@@ -144,6 +150,30 @@ const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }) => {
                   <span className="absolute left-4 top-2.5 text-gray-500 text-sm">@</span>
                   <input name="username" value={formData.username} onChange={handleChange} placeholder="adnan" className="w-full bg-white/[0.03] border border-white/10 rounded-xl pl-8 pr-4 py-2.5 text-sm text-white focus:border-blue-500 outline-none transition" />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 1.5: ACTIVE DIRECTIVE */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2">
+              <Zap size={16} className="text-yellow-400"/> Active Directive
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">Intent Focus</label>
+                <select name="activeDirectiveIntent" value={formData.activeDirectiveIntent} onChange={handleChange} className="w-full bg-white/[0.03] border border-yellow-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:border-yellow-500 outline-none transition">
+                  <option value="None">None</option>
+                  <option value="Seeking Funding">Seeking Funding</option>
+                  <option value="Offering Mentorship">Offering Mentorship</option>
+                  <option value="Actively Bartering">Actively Bartering</option>
+                  <option value="Accepting Mentees">Accepting Mentees</option>
+                  <option value="Open to Collaborate">Open to Collaborate</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">Short Description</label>
+                <input name="activeDirectiveText" maxLength={50} value={formData.activeDirectiveText} onChange={handleChange} placeholder="e.g. Raising $500k Seed" className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-blue-500 outline-none transition" />
               </div>
             </div>
           </div>
