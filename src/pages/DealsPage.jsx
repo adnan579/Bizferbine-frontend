@@ -143,6 +143,7 @@ const DealsPage = () => {
       case 'Negotiating': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
       case 'Accepted': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
       case 'Closed': return 'text-red-400 bg-red-500/10 border-red-500/30';
+      case 'Frozen': return 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30';
       default: return 'text-gray-400 bg-gray-500/10 border-gray-500/30';
     }
   };

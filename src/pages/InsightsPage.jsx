@@ -1,7 +1,7 @@
 // src/pages/InsightsPage.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Image as ImageIcon, Send, ThumbsUp, MessageSquare, Zap, Loader2, Share2 } from 'lucide-react';
+import { ChevronLeft, Image as ImageIcon, Send, ThumbsUp, MessageSquare, Zap, Loader2, Share2, Flag } from 'lucide-react';
 
 // --- SAFE IMAGE LOADER FOR CLOUDINARY ---
 const getImageUrl = (path) => {
@@ -124,6 +124,27 @@ const InsightsPage = () => {
     }
   };
 
+  // PHASE 4: CONTENT FLAGGING
+  const handleFlagInsight = async (insightId) => {
+    if (!window.confirm('Are you sure you want to flag this content to the platform admins?')) return;
+    try {
+      const response = await fetch(`https://bizferbine-backend.onrender.com/api/disputes`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` 
+        },
+        body: JSON.stringify({ reportedEntityId: insightId, module: 'Insights', reason: 'Automated queue flag from user feed.' })
+      });
+      if (response.ok) {
+        alert('Content flagged for review. Our Overseers will investigate.');
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Failed to flag insight.');
+      }
+    } catch (err) { console.error('Failed to flag insight:', err); }
+  };
+
   if (loading) return <div className="min-h-screen bg-[#050810] text-blue-400 flex items-center justify-center font-mono animate-pulse">Loading_Network_Feed...</div>;
 
   return (
@@ -225,6 +246,13 @@ const InsightsPage = () => {
                     className="flex items-center gap-2 text-xs font-mono text-gray-500 hover:text-emerald-400 tracking-widest uppercase transition ml-auto"
                   >
                     <Share2 size={16} /> Share
+                  </button>
+                  <button 
+                    onClick={() => handleFlagInsight(insight._id)}
+                    className="flex items-center gap-2 text-[10px] font-mono text-rose-500/70 hover:text-rose-400 tracking-widest uppercase transition ml-4"
+                    title="Flag for Moderation"
+                  >
+                    <Flag size={14} /> Flag
                   </button>
                 </div>
 

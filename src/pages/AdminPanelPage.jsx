@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, Users, Briefcase, Activity, Settings, Search, Filter, AlertOctagon, CheckCircle2, 
-  ChevronRight, Download, Ban, Unlock, Zap, Network, Calendar, Lock, MessageSquare, Megaphone, Send, Trash2, FileText, AlertTriangle } from 'lucide-react';
+  ChevronRight, Download, Ban, Unlock, Zap, Network, Calendar, Lock, MessageSquare, Megaphone, Send, Trash2, FileText, AlertTriangle, DollarSign } from 'lucide-react';
 
 const AdminPanelPage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -10,7 +10,7 @@ const AdminPanelPage = () => {
   
   // Data States
   const [stats, setStats] = useState({ totalUsers: 0, activeDeals: 0, pendingDisputes: 0, activeBarters: 0 });
-  const [deepStats, setDeepStats] = useState({ totalMentorships: 0, totalInsights: 0, totalEvents: 0, totalConnections: 0 });
+  const [deepStats, setDeepStats] = useState({ totalMentorships: 0, totalInsights: 0, totalEvents: 0, totalConnections: 0, economyVolume: 0 });
   const [disputes, setDisputes] = useState([]);
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,17 +56,17 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   // --- NEW: Automatically fetch chat logs when a dispute is opened ---
   useEffect(() => {
-    if (selectedDispute && selectedDispute.module === 'SkillExchange') {
-      fetchChatLogs(selectedDispute.reportedEntityId);
+    if (selectedDispute && ['SkillExchange', 'DealRoom', 'Mentorship'].includes(selectedDispute.module)) {
+      fetchChatLogs(selectedDispute.reportedEntityId, selectedDispute.module);
     } else {
       setChatLogs([]);
     }
   }, [selectedDispute]);
 
-  const fetchChatLogs = async (workspaceId) => {
+  const fetchChatLogs = async (workspaceId, moduleName) => {
     setLoadingLogs(true);
     try {
-      const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/workspaces/${workspaceId}/logs`, {
+      const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/workspaces/${workspaceId}/logs?module=${moduleName}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (res.ok) {
@@ -213,6 +213,39 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
     } catch (err) {
       console.error(err);
     }
+  };
+
+  // --- PHASE 3: GHOST PROTOCOL (NEURAL OVERRIDE) ---
+  const handleGhostLogin = async (userId) => {
+    if (!window.confirm("NEURAL OVERRIDE: Generate a temporary session as this node?")) return;
+    try {
+      const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/ghost-auth/${userId}`, {
+        method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        window.location.href = '/dashboard';
+      } else alert(data.message);
+    } catch (err) { console.error(err); }
+  };
+
+  // --- PHASE 2: THE TRUST ORACLE ---
+  const handleInjectBadge = async (userId) => {
+    const badge = window.prompt("TRUST ORACLE: Enter the name of the badge to manually inject:");
+    if (!badge || badge.trim() === '') return;
+    try {
+      const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/users/${userId}/badges`, {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ badge })
+      });
+      if (res.ok) {
+        alert("Badge Injected Successfully!");
+        fetchAdminData();
+      }
+    } catch (err) { console.error(err); }
   };
 
   if (loading) return <div className="min-h-screen bg-[#020408] text-rose-500 flex items-center justify-center font-mono animate-pulse uppercase tracking-widest">Authenticating Security Clearance...</div>;
@@ -433,7 +466,21 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
                             {user.status || 'Active'}
                           </span>
                         </td>
-                        <td className="p-5 text-right flex justify-end gap-2">
+                        <td className="p-5 text-right flex flex-wrap justify-end gap-2">
+    <button 
+      onClick={() => handleInjectBadge(user._id)}
+      className="px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 bg-purple-900/20 text-purple-400 hover:bg-purple-900/40 border border-purple-700/30"
+      title="Trust Oracle"
+    >
+      <ShieldAlert size={14}/> Badge
+    </button>
+    <button 
+      onClick={() => handleGhostLogin(user._id)}
+      className="px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 bg-blue-900/20 text-blue-400 hover:bg-blue-900/40 border border-blue-700/30"
+      title="Neural Override"
+    >
+      <Zap size={14}/> Ghost
+    </button>
     {/* The New Warning Button */}
     <button 
       onClick={() => handleWarnUser(user._id)}
@@ -464,7 +511,7 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
               <h2 className="text-3xl font-black text-white mb-2 tracking-tight">System Telemetry</h2>
               <p className="text-sm text-gray-400 mb-8">Deep insight into module utilization and ecosystem growth.</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 <div className="bg-[#050810] border border-white/5 p-6 rounded-3xl shadow-lg">
                   <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-4"><Users size={20} /></div>
                   <div className="text-3xl font-black text-white mb-1">{deepStats.totalMentorships}</div>
@@ -487,6 +534,12 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4"><Calendar size={20} /></div>
                   <div className="text-3xl font-black text-white mb-1">{deepStats.totalEvents}</div>
                   <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">Events Deployed</div>
+                </div>
+
+                <div className="bg-[#050810] border border-emerald-500/20 p-6 rounded-3xl shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4"><DollarSign size={20} /></div>
+                  <div className="text-3xl font-black text-white mb-1">${deepStats.economyVolume?.toLocaleString() || 0}</div>
+                  <div className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest">Ecosystem Economy Volume</div>
                 </div>
               </div>
             </div>
@@ -599,9 +652,27 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
                   <MessageSquare size={16} className="text-cyan-400" />
                   <span className="text-xs font-bold text-white uppercase tracking-widest font-mono">Decrypted Workspace Logs</span>
                 </div>
+
+                {selectedDispute.module === 'DealRoom' && (
+                  <div className="p-4 bg-rose-950/20 border-b border-rose-500/20 shrink-0 flex justify-between items-center">
+                    <span className="text-xs text-rose-400 font-bold font-mono tracking-widest uppercase"><AlertTriangle size={14} className="inline mr-2"/> Deal Room Intervention</span>
+                    <button onClick={async () => {
+                      if(!window.confirm("VAULT QUARANTINE: Freeze this Deal Room and lock all operations?")) return;
+                      try {
+                        const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/deals/${selectedDispute.reportedEntityId}/freeze`, {
+                          method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                        });
+                        if (res.ok) { alert("Vault Frozen Successfully."); fetchAdminData(); setSelectedDispute(null); }
+                        else alert((await res.json()).message);
+                      } catch (err) { console.error(err); }
+                    }} className="bg-rose-600/20 hover:bg-rose-600/40 border border-rose-500/30 text-rose-400 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-[0_0_15px_rgba(225,29,72,0.3)]">
+                      <Lock size={14}/> Quarantine Vault
+                    </button>
+                  </div>
+                )}
                 
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                  {selectedDispute.module !== 'SkillExchange' ? (
+                  {!['SkillExchange', 'DealRoom', 'Mentorship'].includes(selectedDispute.module) ? (
                     <div className="h-full flex items-center justify-center text-gray-500 text-xs font-mono uppercase tracking-widest">Logs unavailable for this module.</div>
                   ) : loadingLogs ? (
                     <div className="h-full flex items-center justify-center text-cyan-500 text-xs font-mono uppercase tracking-widest animate-pulse">Decrypting secure logs...</div>
