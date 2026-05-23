@@ -1,7 +1,7 @@
 // src/pages/EventsPage.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Ticket, Calendar, MapPin, Users, DollarSign, Plus, CheckCircle2, ShieldAlert, Loader2, AlertCircle } from 'lucide-react';
+import { ChevronLeft, Ticket, Calendar, MapPin, Users, DollarSign, Plus, CheckCircle2, ShieldAlert, Loader2, AlertCircle, Settings, Download, Megaphone, CalendarDays } from 'lucide-react';
 
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
@@ -17,6 +17,12 @@ const EventsPage = () => {
     date: '', ticketPrice: 0, maxCapacity: 100, 
     acceptsSponsors: false, sponsorshipPrice: 0
   });
+
+  // Command Center Modal State
+  const [isManageOpen, setIsManageOpen] = useState(false);
+  const [manageData, setManageData] = useState(null);
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -72,11 +78,38 @@ const EventsPage = () => {
   };
 
   // REGISTER AS ATTENDEE
-  const handleRegister = async (eventId) => {
+  const handleRegister = async (event) => {
+    if (event.ticketPrice > 0) {
+      const confirmPay = window.confirm(`This is a premium event. Proceed to secure Razorpay checkout to pay $${event.ticketPrice}?`);
+      if (!confirmPay) return;
+    }
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/events/${eventId}/register`, {
+      const response = await fetch(`https://bizferbine-backend.onrender.com/api/events/${event._id}/register`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ paymentSuccess: true }) // Simulating successful Razorpay gateway
+      });
+      const data = await response.json();
+      if (data.requiresPayment) {
+        alert(data.message); // The webhook response
+      } else {
+        alert(data.message);
+      }
+      if (response.ok) fetchEvents();
+    } catch (err) { console.error(err); }
+  };
+
+  // REGISTER AS SPONSOR
+  const handleSponsor = async (event) => {
+    if (event.sponsorshipPrice > 0) {
+      const confirmPay = window.confirm(`Proceed to Escrow Checkout to secure sponsorship for $${event.sponsorshipPrice}?`);
+      if (!confirmPay) return;
+    }
+    try {
+      const response = await fetch(`https://bizferbine-backend.onrender.com/api/events/${event._id}/sponsor`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ paymentSuccess: true }) // Simulating successful Razorpay gateway
       });
       const data = await response.json();
       alert(data.message);
@@ -84,17 +117,27 @@ const EventsPage = () => {
     } catch (err) { console.error(err); }
   };
 
-  // REGISTER AS SPONSOR
-  const handleSponsor = async (eventId) => {
+  // OPEN COMMAND CENTER
+  const handleOpenCommandCenter = async (eventId) => {
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/events/${eventId}/sponsor`, {
-        method: 'POST',
+      const response = await fetch(`https://bizferbine-backend.onrender.com/api/events/${eventId}/manage`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
-      const data = await response.json();
-      alert(data.message);
-      if (response.ok) fetchEvents();
+      if (response.ok) {
+        setManageData(await response.json());
+        setIsManageOpen(true);
+      }
     } catch (err) { console.error(err); }
+  };
+
+  // GENERATE GOOGLE CALENDAR LINK
+  const generateCalendarLink = (event) => {
+    const title = encodeURIComponent(event.title);
+    const details = encodeURIComponent(event.description);
+    const location = encodeURIComponent(event.locationOrLink);
+    const start = new Date(event.date).toISOString().replace(/-|:|\.\d\d\d/g, '');
+    const end = new Date(new Date(event.date).getTime() + 3600000).toISOString().replace(/-|:|\.\d\d\d/g, ''); // +1 hour
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}&location=${location}`;
   };
 
   if (loading) return <div className="min-h-screen bg-[#050810] text-blue-400 flex items-center justify-center font-mono animate-pulse uppercase tracking-widest">Scanning_Event_Vectors...</div>;
@@ -135,6 +178,7 @@ const EventsPage = () => {
               const isFull = event.registeredAttendees?.length >= event.maxCapacity;
               const isRegistered = event.registeredAttendees?.includes(loggedInUser.id);
               const isSponsor = event.sponsors?.includes(loggedInUser.id);
+              const isOrganizer = event.organizerId === loggedInUser.id;
 
               return (
                 <div key={event._id} className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-6 hover:border-emerald-500/30 transition-all duration-300 group flex flex-col relative overflow-hidden">
@@ -165,32 +209,38 @@ const EventsPage = () => {
                   {/* Actions Footer */}
                   <div className="mt-auto pt-4 border-t border-white/5 flex flex-col gap-2">
                     
-                    {/* Attendee Button */}
-                    {isRegistered ? (
-                      <button disabled className="w-full bg-blue-500/10 text-blue-400 border border-blue-500/30 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2">
-                        <CheckCircle2 size={16} /> Registered
-                      </button>
-                    ) : isFull ? (
-                      <button disabled className="w-full bg-red-500/10 text-red-400 border border-red-500/30 py-3 rounded-xl text-xs font-bold uppercase tracking-widest">
-                        Sold Out
+                    {/* Organizer Manage Button */}
+                    {isOrganizer ? (
+                      <button onClick={() => handleOpenCommandCenter(event._id)} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.4)]">
+                        <Settings size={16} /> Command Center
                       </button>
                     ) : (
-                      <button onClick={() => handleRegister(event._id)} className="w-full bg-white/5 hover:bg-blue-600 border border-white/10 hover:border-blue-500 text-white py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
-                        Register <span className="font-mono bg-black/30 px-2 py-0.5 rounded text-[10px]">${event.ticketPrice}</span>
-                      </button>
-                    )}
+                      <>
+                        {/* Attendee Button */}
+                        {isRegistered ? (
+                          <div className="flex gap-2">
+                            <button disabled className="flex-1 bg-blue-500/10 text-blue-400 border border-blue-500/30 py-3 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1"><CheckCircle2 size={14} /> Registered</button>
+                            <a href={generateCalendarLink(event)} target="_blank" rel="noreferrer" className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 py-3 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition"><CalendarDays size={14}/> Sync Cal</a>
+                          </div>
+                        ) : isFull ? (
+                          <button disabled className="w-full bg-red-500/10 text-red-400 border border-red-500/30 py-3 rounded-xl text-xs font-bold uppercase tracking-widest">Sold Out</button>
+                        ) : (
+                          <button onClick={() => handleRegister(event)} className="w-full bg-white/5 hover:bg-blue-600 border border-white/10 hover:border-blue-500 text-white py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
+                            Register <span className="font-mono bg-black/30 px-2 py-0.5 rounded text-[10px]">${event.ticketPrice}</span>
+                          </button>
+                        )}
 
-                    {/* Sponsor Button */}
-                    {event.acceptsSponsors && (
-                      isSponsor ? (
-                        <button disabled className="w-full bg-purple-500/10 text-purple-400 border border-purple-500/30 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2">
-                          <CheckCircle2 size={16} /> Official Sponsor
-                        </button>
-                      ) : (
-                        <button onClick={() => handleSponsor(event._id)} className="w-full bg-purple-600/20 hover:bg-purple-600 border border-purple-500/30 hover:border-purple-500 text-purple-300 hover:text-white py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
-                          Become Sponsor <span className="font-mono bg-black/30 px-2 py-0.5 rounded text-[10px]">${event.sponsorshipPrice}</span>
-                        </button>
-                      )
+                        {/* Sponsor Button */}
+                        {event.acceptsSponsors && (
+                          isSponsor ? (
+                            <button disabled className="w-full bg-purple-500/10 text-purple-400 border border-purple-500/30 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2"><CheckCircle2 size={16} /> Official Sponsor</button>
+                          ) : (
+                            <button onClick={() => handleSponsor(event)} className="w-full bg-purple-600/20 hover:bg-purple-600 border border-purple-500/30 hover:border-purple-500 text-purple-300 hover:text-white py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
+                              Sponsor Event <span className="font-mono bg-black/30 px-2 py-0.5 rounded text-[10px]">${event.sponsorshipPrice}</span>
+                            </button>
+                          )
+                        )}
+                      </>
                     )}
 
                   </div>
@@ -278,6 +328,71 @@ const EventsPage = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* COMMAND CENTER MODAL */}
+      {isManageOpen && manageData && (
+        <div className="fixed inset-0 z-[100] flex justify-center items-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-3xl bg-[#0a0f1c] border border-blue-500/30 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.15)] p-8 overflow-y-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-start mb-6 border-b border-white/5 pb-4">
+              <div>
+                <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                  <Settings className="text-blue-400" /> EVENT COMMAND CENTER
+                </h2>
+                <p className="text-gray-400 text-sm mt-1">{manageData.event.title}</p>
+              </div>
+              <button onClick={() => setIsManageOpen(false)} className="bg-white/5 hover:bg-white/10 p-2 rounded-full text-white transition">X</button>
+            </div>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-emerald-500/10 border border-emerald-500/20 p-5 rounded-2xl">
+                <p className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest mb-1">Escrow Revenue</p>
+                <p className="text-3xl font-black text-emerald-400">${manageData.revenue}</p>
+              </div>
+              <div className="bg-blue-500/10 border border-blue-500/20 p-5 rounded-2xl">
+                <p className="text-[10px] font-mono text-blue-500 uppercase tracking-widest mb-1">Registered Nodes</p>
+                <p className="text-3xl font-black text-blue-400">{manageData.attendees.length} / {manageData.event.maxCapacity}</p>
+              </div>
+            </div>
+
+            {/* Broadcast */}
+            <div className="bg-black/50 border border-white/5 rounded-2xl p-5 mb-6">
+              <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><Megaphone size={16} className="text-yellow-400"/> Network Broadcast</h3>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setIsBroadcasting(true);
+                try {
+                  await fetch(`https://bizferbine-backend.onrender.com/api/events/${manageData.event._id}/broadcast`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                    body: JSON.stringify({ message: broadcastMessage })
+                  });
+                  alert('Message transmitted to all attendees!'); setBroadcastMessage('');
+                } catch (err) { console.error(err); } finally { setIsBroadcasting(false); }
+              }} className="flex gap-2">
+                <input required type="text" placeholder="Send secure update to all attendees..." value={broadcastMessage} onChange={(e) => setBroadcastMessage(e.target.value)} className="flex-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-yellow-500 outline-none transition" />
+                <button disabled={isBroadcasting} type="submit" className="bg-yellow-600 hover:bg-yellow-500 text-black px-6 rounded-xl text-sm font-bold transition flex items-center gap-2">{isBroadcasting ? <Loader2 className="animate-spin" size={16}/> : 'Transmit'}</button>
+              </form>
+            </div>
+
+            {/* Attendee List */}
+            <h3 className="text-sm font-bold text-white mb-3">Attendee Manifest</h3>
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+              {manageData.attendees.length === 0 && <p className="text-gray-500 text-xs font-mono uppercase">No registrations yet.</p>}
+              {manageData.attendees.map(user => (
+                <div key={user._id} className="bg-black border border-white/5 p-3 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center font-bold text-blue-400 text-xs overflow-hidden">
+                      {user.profilePictureUrl ? <img src={`https://bizferbine-backend.onrender.com/${user.profilePictureUrl}`} className="w-full h-full object-cover"/> : user.name.charAt(0)}
+                    </div>
+                    <div><p className="text-sm font-bold text-white leading-none">{user.name}</p><p className="text-[10px] text-gray-500 font-mono mt-1">{user.role}</p></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
           </div>
         </div>
       )}
