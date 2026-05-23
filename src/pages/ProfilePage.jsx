@@ -59,6 +59,20 @@ const ProfilePage = () => {
     else fetchProfile();
   }, [targetProfileId, navigate]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+      if (e.key === 'Escape') {
+        setIsCommandPaletteOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleFollowToggle = async () => {
     try {
       const res = await fetch(`https://bizferbine-backend.onrender.com/api/network/follow/${targetProfileId}`, {
@@ -129,10 +143,7 @@ const ProfilePage = () => {
   const isFollowing = profile.followers?.some(id => id === loggedInUser.id);
 
   // PHASE 1: PROOF-OF-WORK SKILL VERIFICATION
-  // Find any skill that has been explicitly endorsed in a 4+ star barter review
-  const verifiedSkills = new Set(
-    profile.barterReviews?.filter(r => r.rating >= 4).flatMap(r => r.skillsEndorsed || []) || []
-  );
+  const verifiedSkills = new Set(profileData?.verifiedSkills || []);
 
   // PHASE 2: TELEMETRY HEATMAP (NATIVE GENERATION)
   // Creates a clean 90-day array to render the exact GitHub style squares safely
@@ -161,6 +172,33 @@ const ProfilePage = () => {
         </div>
       )}
       
+      {/* PHASE 4: CMD+K COMMAND PALETTE */}
+      {isCommandPaletteOpen && (
+        <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[20vh] bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="w-full max-w-2xl bg-[#050810] border border-cyan-500/30 rounded-2xl shadow-[0_0_50px_rgba(34,211,238,0.15)] overflow-hidden">
+            <div className="flex items-center px-4 py-3 border-b border-white/10 bg-black/50">
+              <Terminal size={18} className="text-cyan-400 mr-3" />
+              <input 
+                autoFocus
+                type="text" 
+                placeholder="Type a command... (e.g., /propose-deal, /request-barter, /ping)" 
+                value={commandInput}
+                onChange={(e) => setCommandInput(e.target.value)}
+                className="flex-1 bg-transparent border-none text-white focus:outline-none font-mono text-sm placeholder-gray-600"
+              />
+              <button onClick={() => setIsCommandPaletteOpen(false)} className="text-[10px] font-mono bg-white/10 px-2 py-1 rounded text-gray-400">ESC</button>
+            </div>
+            {commandInput && (
+              <div className="p-2 bg-black/80">
+                <button className="w-full text-left px-4 py-3 hover:bg-cyan-900/30 text-sm text-cyan-300 font-mono rounded-xl transition flex items-center gap-2">
+                  <ArrowRight size={14}/> Execute: <span className="text-white">{commandInput}</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {isOwnProfile && (
         <>
           <EditProfileModal profile={profile} isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} onUpdate={(upd) => setProfileData({ ...profileData, profile: upd })} />
