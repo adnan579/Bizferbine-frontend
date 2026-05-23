@@ -69,7 +69,7 @@ const SearchPage = () => {
               <div key={user._id} className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-6 hover:border-blue-500/30 transition group flex flex-col items-center text-center">
                 <div className="w-20 h-20 rounded-2xl bg-[#050810] border-2 border-white/10 p-1 mb-4 overflow-hidden">
                   {user.profilePictureUrl ? (
-                    <img src={`https://bizferbine-backend.onrender.com/${user.profilePictureUrl}`} alt={user.name} className="w-full h-full object-cover rounded-xl" />
+                <img src={user.profilePictureUrl.startsWith('http') ? user.profilePictureUrl : `https://bizferbine-backend.onrender.com/${user.profilePictureUrl}`} alt={user.name} className="w-full h-full object-cover rounded-xl" />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-2xl font-black text-white">
                       {user.name.charAt(0).toUpperCase()}

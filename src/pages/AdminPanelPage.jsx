@@ -452,7 +452,7 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
                       <tr key={user._id} className="hover:bg-white/5 transition">
                         <td className="p-5 flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-black border border-white/10 flex items-center justify-center font-bold text-white text-xs overflow-hidden">
-                            {user.profilePictureUrl ? <img src={`https://bizferbine-backend.onrender.com/${user.profilePictureUrl}`} className="w-full h-full object-cover"/> : user.name.charAt(0)}
+                            {user.profilePictureUrl ? <img src={user.profilePictureUrl.startsWith('http') ? user.profilePictureUrl : `https://bizferbine-backend.onrender.com/${user.profilePictureUrl}`} className="w-full h-full object-cover"/> : user.name.charAt(0)}
                           </div>
                           <div>
                             <div className="text-sm font-bold text-white">{user.name}</div>

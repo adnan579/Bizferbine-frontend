@@ -134,7 +134,7 @@ const MessagesPage = () => {
                 >
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-rose-600 p-[1px] shrink-0">
                     <div className="w-full h-full rounded-full bg-[#050810] flex items-center justify-center font-bold text-white overflow-hidden">
-                       {contact.profilePictureUrl ? <img src={`https://bizferbine-backend.onrender.com/${contact.profilePictureUrl}`} className="w-full h-full object-cover" /> : contact.name.charAt(0)}
+                     {contact.profilePictureUrl ? <img src={contact.profilePictureUrl.startsWith('http') ? contact.profilePictureUrl : `https://bizferbine-backend.onrender.com/${contact.profilePictureUrl}`} className="w-full h-full object-cover" /> : contact.name.charAt(0)}
                     </div>
                   </div>
                   <div className="flex-1 overflow-hidden">
@@ -159,7 +159,7 @@ const MessagesPage = () => {
               <div className="p-4 border-b border-white/5 bg-[#0a0f1c]/80 backdrop-blur-md flex items-center gap-4 shrink-0">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-rose-600 p-[1px] shrink-0">
                     <div className="w-full h-full rounded-full bg-[#050810] flex items-center justify-center font-bold text-white overflow-hidden">
-                       {activeContact.profilePictureUrl ? <img src={`https://bizferbine-backend.onrender.com/${activeContact.profilePictureUrl}`} className="w-full h-full object-cover" /> : activeContact.name.charAt(0)}
+                   {activeContact.profilePictureUrl ? <img src={activeContact.profilePictureUrl.startsWith('http') ? activeContact.profilePictureUrl : `https://bizferbine-backend.onrender.com/${activeContact.profilePictureUrl}`} className="w-full h-full object-cover" /> : activeContact.name.charAt(0)}
                     </div>
                 </div>
                 <div>

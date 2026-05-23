@@ -130,7 +130,7 @@ const NotificationCenter = ({ isOpen, onClose, onUnreadUpdate }) => {
                   {/* Sender Avatar */}
                   <div className="w-10 h-10 rounded-full bg-[#050810] border border-white/10 shrink-0 overflow-hidden flex items-center justify-center font-bold text-white relative">
                     {alert.sender?.profilePictureUrl ? (
-                      <img src={`https://bizferbine-backend.onrender.com/${alert.sender.profilePictureUrl}`} className="w-full h-full object-cover" alt="Sender" />
+                  <img src={alert.sender.profilePictureUrl.startsWith('http') ? alert.sender.profilePictureUrl : `https://bizferbine-backend.onrender.com/${alert.sender.profilePictureUrl}`} className="w-full h-full object-cover" alt="Sender" />
                     ) : (
                       alert.sender?.name?.charAt(0).toUpperCase() || 'S'
                     )}

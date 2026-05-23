@@ -1,7 +1,7 @@
 // src/pages/ProfilePage.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { MapPin, Link as LinkIcon, Code, Users, Briefcase, Award, Zap, ChevronLeft, ExternalLink, Trash2, ThumbsUp, MessageSquare, UserPlus, Handshake, Star, Settings, Network, ShieldCheck, Activity, Download, CheckCircle2, ArrowRightLeft } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Code, Users, Briefcase, Award, Zap, ChevronLeft, ExternalLink, Trash2, ThumbsUp, MessageSquare, UserPlus, Handshake, Star, Settings, Network, ShieldCheck, Activity, Download, CheckCircle2, ArrowRightLeft, Play, X, Terminal, ArrowRight } from 'lucide-react';
 import EditProfileModal from './EditProfileModal';
 import AddPortfolioModal from './AddPortfolioModal';
 
@@ -16,9 +16,14 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(''); 
   
+  const [heatmapData, setHeatmapData] = useState([]);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false); // NEW: Cmd+K Engine
+  const [commandInput, setCommandInput] = useState(''); // NEW: Cmd
+
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isPortfolioOpen, setIsPortfolioOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isVideoOpen, setIsVideoOpen] = useState(false); // NEW: Video Node State
   
   const navigate = useNavigate();
   const { userId } = useParams(); 
@@ -40,6 +45,11 @@ const ProfilePage = () => {
       const data = await response.json();
       if (response.ok) setProfileData(data);
       else setError(data.message || 'Failed to load profile.');
+      
+      // Phase 2: Fetch Telemetry Heatmap Data
+      const hmRes = await fetch(`https://bizferbine-backend.onrender.com/api/profile/${targetProfileId}/heatmap`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }});
+      if (hmRes.ok) setHeatmapData(await hmRes.json());
+      
     } catch (err) { setError('Server connection error.'); } 
     finally { setLoading(false); }
   };
@@ -118,6 +128,20 @@ const ProfilePage = () => {
   const mutualConnections = profileData?.mutualConnections || [];
   const isFollowing = profile.followers?.some(id => id === loggedInUser.id);
 
+  // PHASE 1: PROOF-OF-WORK SKILL VERIFICATION
+  // Find any skill that has been explicitly endorsed in a 4+ star barter review
+  const verifiedSkills = new Set(
+    profile.barterReviews?.filter(r => r.rating >= 4).flatMap(r => r.skillsEndorsed || []) || []
+  );
+
+  // PHASE 2: TELEMETRY HEATMAP (NATIVE GENERATION)
+  // Creates a clean 90-day array to render the exact GitHub style squares safely
+  const last90Days = Array.from({length: 90}, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (89 - i));
+    return d.toISOString().split('T')[0];
+  });
+
   // PHASE 4: PDF EXPORT TRIGGER
   const handleExportPDF = () => {
     window.print();
@@ -125,6 +149,17 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-blue-500/30 pb-20 print:bg-white print:text-black print:pb-0">
+
+      {/* PHASE 3: THE ASYNCHRONOUS ELEVATOR PITCH MODAL */}
+      {isVideoOpen && profile?.pitchVideoUrl && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="w-full max-w-sm bg-[#0a0f1c] border border-purple-500/30 rounded-3xl overflow-hidden relative shadow-[0_0_50px_rgba(147,51,234,0.3)] animate-in zoom-in-95">
+            <button onClick={() => setIsVideoOpen(false)} className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black p-2 rounded-full text-white transition"><X size={20}/></button>
+            <video src={getImageUrl(profile.pitchVideoUrl)} controls autoPlay className="w-full h-full object-cover max-h-[70vh] block" />
+            <div className="p-4 bg-[#0a0f1c] text-center border-t border-purple-500/20"><p className="text-xs font-bold text-purple-400 uppercase tracking-widest">Asynchronous Protocol Active</p></div>
+          </div>
+        </div>
+      )}
       
       {isOwnProfile && (
         <>
@@ -183,6 +218,13 @@ const ProfilePage = () => {
                  {profile?.name ? profile.name.charAt(0).toUpperCase() : 'U'}
                </div>
              )}
+
+             {/* THE VIDEO NODE TRIGGER ORB */}
+             {profile?.pitchVideoUrl && (
+               <button onClick={() => setIsVideoOpen(true)} className="absolute bottom-[-10px] right-[-10px] w-10 h-10 bg-purple-600 hover:bg-purple-500 rounded-full border-2 border-[#0a0f1c] flex items-center justify-center animate-pulse shadow-[0_0_20px_rgba(147,51,234,0.8)] z-20 print:hidden transition">
+                 <Play size={16} className="text-white fill-white ml-0.5" />
+               </button>
+             )}
           </div>
 
           <div className="flex-1 mb-2 z-10 mt-2 w-full print:text-black">
@@ -210,6 +252,26 @@ const ProfilePage = () => {
             <p className="text-gray-400 font-mono text-[9px] md:text-[10px] tracking-widest uppercase mt-2 mb-2 print:text-gray-600">{profile?.role || 'Network User'} • {profile?.industry || 'General'}</p>
             <p className="text-gray-300 text-sm md:text-lg max-w-2xl px-2 md:px-0 print:text-gray-800">{profile?.headline || 'Establishing system branding...'}</p>
             
+            {/* QUICK FIX: THE MUTUAL TRUST GRAPH */}
+            {!isOwnProfile && mutualConnections.length > 0 && (
+              <div className="flex items-center gap-3 mt-4 mb-2 print:hidden bg-blue-900/10 border border-blue-500/20 w-fit px-3 py-1.5 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.1)]">
+                <div className="flex -space-x-2">
+                  {mutualConnections.map(user => (
+                    <div key={user._id} className="w-6 h-6 rounded-full border-2 border-[#0a0f1c] bg-gray-800 overflow-hidden" title={user.name}>
+                      {user.profilePictureUrl ? (
+                        <img src={getImageUrl(user.profilePictureUrl)} className="w-full h-full object-cover"/>
+                      ) : (
+                        <span className="text-[8px] flex items-center justify-center h-full w-full font-bold text-white bg-blue-600">{user.name.charAt(0)}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <span className="text-xs text-blue-300 font-mono pr-2">
+                  {mutualConnections.length} Shared Node{mutualConnections.length > 1 ? 's' : ''}
+                </span>
+              </div>
+            )}
+
             {!isOwnProfile && (
               <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-2 md:gap-3 mt-5 w-full print:hidden">
                 
@@ -311,16 +373,43 @@ const ProfilePage = () => {
             </div>
           </section>
 
+          {/* PHASE 2: ECOSYSTEM TELEMETRY HEATMAP */}
+          <section className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-5 md:p-6 print:hidden">
+            <h2 className="text-white font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-[10px] font-mono text-gray-500">
+              <Activity size={14} className="text-cyan-400" /> Platform Telemetry (90 Days)
+            </h2>
+            <div className="flex gap-1 flex-wrap justify-start">
+              {last90Days.map((date, i) => {
+                 const count = heatmapData.find(d => d.date === date)?.count || 0;
+                 const color = count > 3 ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 
+                               count > 1 ? 'bg-cyan-600' : 
+                               count > 0 ? 'bg-cyan-900/50 border border-cyan-700/50' : 
+                               'bg-white/5 border border-white/5';
+                 return (
+                   <div 
+                     key={date} 
+                     title={`${count} executions on ${date}`} 
+                     className={`w-3.5 h-3.5 md:w-4 md:h-4 rounded-sm transition-colors hover:border-white ${color}`}
+                   ></div>
+                 );
+              })}
+            </div>
+          </section>
+
           <section className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-5 md:p-6 print:border-black/10 print:bg-white">
             <h2 className="text-white font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-[10px] font-mono text-gray-500 print:text-black">
               <Zap size={14} className="text-yellow-400" /> Skill Matrix
             </h2>
             <div className="flex flex-wrap gap-2">
-              {profile?.skills?.length > 0 ? profile.skills.map((skill, index) => (
-                <span key={index} className="px-3 py-1.5 bg-black border border-white/10 text-gray-300 rounded-lg text-[10px] font-mono uppercase tracking-tighter">
-                  {skill}
-                </span>
-              )) : <span className="text-xs text-gray-600">No skills identified.</span>}
+              {profile?.skills?.length > 0 ? profile.skills.map((skill, index) => {
+                const isVerified = verifiedSkills.has(skill); // Phase 1 Check
+                return (
+                  <span key={index} className={`px-3 py-1.5 border rounded-lg text-[10px] font-mono uppercase tracking-tighter flex items-center gap-1.5 ${isVerified ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.2)]' : 'bg-black border-white/10 text-gray-300'}`}>
+                    {isVerified && <ShieldCheck size={12} className="text-yellow-400" />}
+                    {skill}
+                  </span>
+                );
+              }) : <span className="text-xs text-gray-600">No skills identified.</span>}
             </div>
           </section>
 

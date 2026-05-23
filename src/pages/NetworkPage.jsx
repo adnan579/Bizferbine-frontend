@@ -94,7 +94,7 @@ const NetworkPage = () => {
                 <div key={req._id} className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-lg">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-orange-600 p-[2px] shrink-0">
                     <div className="w-full h-full rounded-full bg-[#050810] flex items-center justify-center font-bold text-white overflow-hidden text-xl">
-                      {req.requester?.profilePictureUrl ? <img src={`https://bizferbine-backend.onrender.com/${req.requester.profilePictureUrl}`} className="w-full h-full object-cover" /> : req.requester?.name.charAt(0)}
+                  {req.requester?.profilePictureUrl ? <img src={req.requester.profilePictureUrl.startsWith('http') ? req.requester.profilePictureUrl : `https://bizferbine-backend.onrender.com/${req.requester.profilePictureUrl}`} className="w-full h-full object-cover" /> : req.requester?.name.charAt(0)}
                     </div>
                   </div>
                   
@@ -131,7 +131,7 @@ const NetworkPage = () => {
                   {connections.map(conn => (
                     <Link to={`/profile/${conn._id}`} key={conn._id} className="flex items-center gap-4 group p-2 hover:bg-white/5 rounded-xl transition">
                       <div className="w-10 h-10 rounded-full bg-[#050810] border border-white/10 shrink-0 overflow-hidden flex items-center justify-center font-bold text-white">
-                        {conn.profilePictureUrl ? <img src={`https://bizferbine-backend.onrender.com/${conn.profilePictureUrl}`} className="w-full h-full object-cover" /> : conn.name.charAt(0)}
+                    {conn.profilePictureUrl ? <img src={conn.profilePictureUrl.startsWith('http') ? conn.profilePictureUrl : `https://bizferbine-backend.onrender.com/${conn.profilePictureUrl}`} className="w-full h-full object-cover" /> : conn.name.charAt(0)}
                       </div>
                       <div className="flex-1 overflow-hidden">
                         <h3 className="font-bold text-white truncate text-sm group-hover:text-blue-400 transition">{conn.name}</h3>

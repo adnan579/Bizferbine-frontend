@@ -211,7 +211,7 @@ const SkillExchangePage = () => {
 
                   <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4 pr-8">
                     <div className="w-10 h-10 rounded-full bg-[#050810] border border-white/10 shrink-0 overflow-hidden flex items-center justify-center font-bold text-white">
-                      {post.user?.profilePictureUrl ? <img src={`https://bizferbine-backend.onrender.com/${post.user.profilePictureUrl}`} className="w-full h-full object-cover" alt="avatar" /> : post.user?.name?.charAt(0)}
+                      {post.user?.profilePictureUrl ? <img src={post.user.profilePictureUrl.startsWith('http') ? post.user.profilePictureUrl : `https://bizferbine-backend.onrender.com/${post.user.profilePictureUrl}`} className="w-full h-full object-cover" alt="avatar" /> : post.user?.name?.charAt(0)}
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-white leading-tight">{post.user?.name}</h3>

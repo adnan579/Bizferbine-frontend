@@ -385,7 +385,7 @@ const EventsPage = () => {
                 <div key={user._id} className="bg-black border border-white/5 p-3 rounded-xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center font-bold text-blue-400 text-xs overflow-hidden">
-                      {user.profilePictureUrl ? <img src={`https://bizferbine-backend.onrender.com/${user.profilePictureUrl}`} className="w-full h-full object-cover"/> : user.name.charAt(0)}
+                      {user.profilePictureUrl ? <img src={user.profilePictureUrl.startsWith('http') ? user.profilePictureUrl : `https://bizferbine-backend.onrender.com/${user.profilePictureUrl}`} className="w-full h-full object-cover"/> : user.name.charAt(0)}
                     </div>
                     <div><p className="text-sm font-bold text-white leading-none">{user.name}</p><p className="text-[10px] text-gray-500 font-mono mt-1">{user.role}</p></div>
                   </div>

@@ -212,7 +212,7 @@ const BarterWorkspacePage = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full bg-[#050810] border border-white/10 flex items-center justify-center text-xs font-bold text-cyan-400 overflow-hidden">
-                      {partnerNode?.profilePictureUrl ? <img src={`https://bizferbine-backend.onrender.com/${partnerNode.profilePictureUrl}`} className="w-full h-full object-cover" /> : partnerNode?.name?.charAt(0)}
+                      {partnerNode?.profilePictureUrl ? <img src={partnerNode.profilePictureUrl.startsWith('http') ? partnerNode.profilePictureUrl : `https://bizferbine-backend.onrender.com/${partnerNode.profilePictureUrl}`} className="w-full h-full object-cover" /> : partnerNode?.name?.charAt(0)}
                     </div>
                     <span className="text-xs text-gray-400">Trading with {partnerNode?.name}</span>
                   </div>

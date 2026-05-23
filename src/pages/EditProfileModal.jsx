@@ -1,6 +1,6 @@
 // src/pages/EditProfileModal.jsx
 import { useState, useEffect } from 'react';
-import { X, Upload, Save, Loader2, AlertCircle, User, Briefcase, Link as LinkIcon, Zap } from 'lucide-react';
+import { X, Upload, Save, Loader2, AlertCircle, User, Briefcase, Link as LinkIcon, Zap, Video } from 'lucide-react';
 
 const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -18,7 +18,7 @@ const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }) => {
     activeDirectiveText: profile?.activeDirective?.text || '',
   });
   
-  const [files, setFiles] = useState({ profilePicture: null, profileBanner: null });
+  const [files, setFiles] = useState({ profilePicture: null, profileBanner: null, pitchVideo: null });
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -69,6 +69,7 @@ const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }) => {
     
     if (files.profilePicture) data.append('profilePicture', files.profilePicture);
     if (files.profileBanner) data.append('profileBanner', files.profileBanner);
+    if (files.pitchVideo) data.append('pitchVideo', files.pitchVideo);
 
     try {
       const response = await fetch('https://bizferbine-backend.onrender.com/api/profile', {
@@ -121,7 +122,7 @@ const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }) => {
         <form onSubmit={handleSubmit} className="space-y-8 pb-24">
           
           {/* MEDIA UPLOADS */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <label className="flex flex-col items-center justify-center h-24 bg-white/[0.02] border border-white/10 rounded-2xl hover:bg-white/[0.04] hover:border-blue-500/50 transition cursor-pointer group">
               <Upload size={18} className="text-gray-500 group-hover:text-blue-400 mb-2 transition" />
               <span className="text-xs text-gray-400 truncate max-w-[150px] px-2">{files.profilePicture ? files.profilePicture.name : 'Profile Picture'}</span>
@@ -131,6 +132,11 @@ const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }) => {
               <Upload size={18} className="text-gray-500 group-hover:text-blue-400 mb-2 transition" />
               <span className="text-xs text-gray-400 truncate max-w-[150px] px-2">{files.profileBanner ? files.profileBanner.name : 'Cover Banner'}</span>
               <input type="file" name="profileBanner" accept="image/*" hidden onChange={handleFileChange} />
+            </label>
+            <label className="flex flex-col items-center justify-center h-24 bg-white/[0.02] border border-purple-500/30 rounded-2xl hover:bg-purple-900/20 hover:border-purple-500/80 transition cursor-pointer group shadow-[0_0_15px_rgba(147,51,234,0.1)]">
+              <Video size={18} className="text-purple-400 group-hover:text-purple-300 mb-2 transition" />
+              <span className="text-xs text-purple-300 truncate max-w-[150px] px-2">{files.pitchVideo ? files.pitchVideo.name : 'Video Pitch (30s)'}</span>
+              <input type="file" name="pitchVideo" accept="video/*" hidden onChange={handleFileChange} />
             </label>
           </div>
 
