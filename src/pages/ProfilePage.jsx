@@ -1,9 +1,10 @@
 // src/pages/ProfilePage.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { MapPin, Link as LinkIcon, Code, Users, Briefcase, Award, Zap, ChevronLeft, ExternalLink, Trash2, ThumbsUp, MessageSquare, UserPlus, Handshake, Star, Settings, Network, ShieldCheck, Activity, Download, CheckCircle2, ArrowRightLeft, Play, X, Terminal, ArrowRight } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Code, Users, Briefcase, Award, Zap, ChevronLeft, ExternalLink, Trash2, ThumbsUp, MessageSquare, UserPlus, Handshake, Star, Settings, Network, ShieldCheck, Activity, Download, CheckCircle2, ArrowRightLeft, Play, X, Terminal, ArrowRight, Bot, Send, Loader2 } from 'lucide-react';
 import EditProfileModal from './EditProfileModal';
 import AddPortfolioModal from './AddPortfolioModal';
+import ForceGraph3D from 'react-force-graph-3d';
 
 // --- SAFE IMAGE LOADER FOR CLOUDINARY ---
 const getImageUrl = (path) => {
@@ -25,6 +26,12 @@ const ProfilePage = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isVideoOpen, setIsVideoOpen] = useState(false); // NEW: Video Node State
   
+  // NEW: Synthetic Node State
+  const [isSyntheticChatOpen, setIsSyntheticChatOpen] = useState(false);
+  const [syntheticInput, setSyntheticInput] = useState('');
+  const [syntheticChatLog, setSyntheticChatLog] = useState([]);
+  const [isSyntheticLoading, setIsSyntheticLoading] = useState(false);
+
   const navigate = useNavigate();
   const { userId } = useParams(); 
   
@@ -104,6 +111,33 @@ const ProfilePage = () => {
     }).catch(err => console.error('Analytics ping failed', err)); 
   };
 
+  const handleSyntheticSubmit = async (e) => {
+    e.preventDefault();
+    if(!syntheticInput.trim()) return;
+
+    const newLog = [...syntheticChatLog, { sender: 'user', text: syntheticInput }];
+    setSyntheticChatLog(newLog);
+    setSyntheticInput('');
+    setIsSyntheticLoading(true);
+
+    try {
+      const res = await fetch(`https://bizferbine-backend.onrender.com/api/profile/${targetProfileId}/synthetic-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ prompt: syntheticInput })
+      });
+      const data = await res.json();
+      setSyntheticChatLog([...newLog, { sender: 'bot', text: data.reply || data.message }]);
+    } catch(err) {
+      setSyntheticChatLog([...newLog, { sender: 'bot', text: "Connection to Synthetic Node severed." }]);
+    } finally {
+      setIsSyntheticLoading(false);
+    }
+  };
+
   const handleDeletePortfolio = async (portfolioId) => {
     if (!window.confirm('Are you sure you want to delete this case study?')) return;
     try {
@@ -141,6 +175,8 @@ const ProfilePage = () => {
   const verifiedExecution = profileData?.verifiedExecution || { eventsHosted: 0, bartersCompleted: 0, mentorshipsCompleted: 0 };
   const mutualConnections = profileData?.mutualConnections || [];
   const isFollowing = profile.followers?.some(id => id === loggedInUser.id);
+  const staminaStatus = profileData?.staminaStatus || 'Stable';
+  const escrowTVL = profileData?.escrowTVL || 0;
 
   // PHASE 1: PROOF-OF-WORK SKILL VERIFICATION
   const verifiedSkills = new Set(profileData?.verifiedSkills || []);
@@ -158,6 +194,15 @@ const ProfilePage = () => {
     window.print();
   };
 
+  // PHASE 3: 3D CONSTELLATION MAP DATA
+  const constellationData = {
+    nodes: [
+      { id: profile?._id || 'target', name: profile?.name || 'Unknown User' },
+      ...mutualConnections.map(user => ({ id: user._id, name: user.name }))
+    ],
+    links: mutualConnections.map(user => ({ source: profile?._id || 'target', target: user._id }))
+  };
+
   return (
     <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-blue-500/30 pb-20 print:bg-white print:text-black print:pb-0">
 
@@ -166,12 +211,56 @@ const ProfilePage = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
           <div className="w-full max-w-sm bg-[#0a0f1c] border border-purple-500/30 rounded-3xl overflow-hidden relative shadow-[0_0_50px_rgba(147,51,234,0.3)] animate-in zoom-in-95">
             <button onClick={() => setIsVideoOpen(false)} className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black p-2 rounded-full text-white transition"><X size={20}/></button>
-            <video src={getImageUrl(profile.pitchVideoUrl)} controls autoPlay className="w-full h-full object-cover max-h-[70vh] block" />
+            <video src={getImageUrl(profile.pitchVideoUrl)} controls autoPlay muted playsInline className="w-full h-full object-cover max-h-[70vh] block" />
             <div className="p-4 bg-[#0a0f1c] text-center border-t border-purple-500/20"><p className="text-xs font-bold text-purple-400 uppercase tracking-widest">Asynchronous Protocol Active</p></div>
           </div>
         </div>
       )}
       
+      {/* PHASE 5: SYNTHETIC NODE CHAT MODAL */}
+      {isSyntheticChatOpen && (
+        <div className="fixed inset-0 z-[150] flex justify-center items-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="w-full max-w-lg bg-[#0a0f1c] border border-cyan-500/30 rounded-3xl shadow-[0_0_50px_rgba(6,182,212,0.2)] p-6 md:p-8 flex flex-col h-[60vh] max-h-[80vh] animate-in zoom-in-95">
+            <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-4 shrink-0">
+              <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                <Bot className="text-cyan-400" /> Synthetic Node: {profile?.name?.split(' ')[0] || 'Unknown'}
+              </h2>
+              <button onClick={() => setIsSyntheticChatOpen(false)} className="text-gray-400 hover:text-white"><X size={20}/></button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+              {syntheticChatLog.length === 0 ? (
+                <div className="text-center text-gray-500 text-xs font-mono uppercase tracking-widest mt-10">
+                  Connection established.<br/>Ask about my experience, skills, or portfolio.
+                </div>
+              ) : (
+                syntheticChatLog.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.sender === 'user' ? 'bg-cyan-600 text-black rounded-br-sm' : 'bg-white/10 text-gray-200 border border-white/5 rounded-bl-sm'}`}>
+                      {msg.text}
+                    </div>
+                  </div>
+                ))
+              )}
+              {isSyntheticLoading && (
+                <div className="flex justify-start">
+                  <div className="max-w-[85%] p-3 rounded-2xl text-sm bg-white/10 text-gray-200 border border-white/5 rounded-bl-sm flex items-center gap-2">
+                    <Loader2 size={14} className="animate-spin" /> Processing...
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleSyntheticSubmit} className="flex gap-2 shrink-0 border-t border-white/5 pt-4">
+              <input type="text" required placeholder="Query this node..." value={syntheticInput} onChange={(e) => setSyntheticInput(e.target.value)} disabled={isSyntheticLoading} className="flex-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition disabled:opacity-50" />
+              <button disabled={isSyntheticLoading} type="submit" className="bg-cyan-600 hover:bg-cyan-500 text-black p-3 rounded-xl flex items-center justify-center transition shadow-[0_0_15px_rgba(6,182,212,0.4)] disabled:opacity-50">
+                <Send size={18} />
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* PHASE 4: CMD+K COMMAND PALETTE */}
       {isCommandPaletteOpen && (
         <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[20vh] bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
@@ -190,7 +279,17 @@ const ProfilePage = () => {
             </div>
             {commandInput && (
               <div className="p-2 bg-black/80">
-                <button className="w-full text-left px-4 py-3 hover:bg-cyan-900/30 text-sm text-cyan-300 font-mono rounded-xl transition flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    const cmd = commandInput.toLowerCase();
+                    if (cmd.includes('/propose-deal')) navigate('/deals');
+                    else if (cmd.includes('/request-barter')) navigate('/skill-exchange');
+                    else if (cmd.includes('/ping')) navigate('/messages');
+                    setIsCommandPaletteOpen(false);
+                    setCommandInput('');
+                  }}
+                  className="w-full text-left px-4 py-3 hover:bg-cyan-900/30 text-sm text-cyan-300 font-mono rounded-xl transition flex items-center gap-2"
+                >
                   <ArrowRight size={14}/> Execute: <span className="text-white">{commandInput}</span>
                 </button>
               </div>
@@ -222,6 +321,11 @@ const ProfilePage = () => {
               <Download size={20} />
             </button>
 
+            {/* SYNTHETIC NODE TRIGGER */}
+            <button onClick={() => setIsSyntheticChatOpen(true)} className="p-2 md:p-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-full transition shadow-[0_0_15px_rgba(6,182,212,0.4)]" title="Chat with Synthetic Node">
+              <Bot size={20} />
+            </button>
+
             <Link to="/network" className="p-2 md:p-2.5 bg-black/50 hover:bg-black/80 text-white rounded-full backdrop-blur-md transition border border-white/10 shadow-lg" title="Network Core">
               <Network size={20} />
             </Link>
@@ -247,7 +351,7 @@ const ProfilePage = () => {
 
         <div className="px-5 md:px-8 pb-6 md:pb-8 relative -mt-16 md:-mt-20 flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 text-center md:text-left">
           
-          <div className="w-28 h-28 md:w-32 md:h-32 rounded-2xl bg-[#050810] border-2 border-blue-500 p-1 shadow-[0_0_20px_rgba(59,130,246,0.5)] z-10 shrink-0 relative overflow-hidden">
+          <div className={`w-28 h-28 md:w-32 md:h-32 rounded-2xl bg-[#050810] p-1 z-10 shrink-0 relative overflow-hidden transition-all duration-500 ${staminaStatus === 'Peak' ? 'border-4 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]' : staminaStatus === 'Burnout' ? 'border-4 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.6)]' : 'border-2 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]'}`}>
              {/* IMPLEMENTED CLOUDINARY SAFE LOADER */}
              {profile?.profilePictureUrl ? (
                <img src={getImageUrl(profile.profilePictureUrl)} alt="Profile" className="w-full h-full object-cover rounded-xl" />
@@ -290,23 +394,25 @@ const ProfilePage = () => {
             <p className="text-gray-400 font-mono text-[9px] md:text-[10px] tracking-widest uppercase mt-2 mb-2 print:text-gray-600">{profile?.role || 'Network User'} • {profile?.industry || 'General'}</p>
             <p className="text-gray-300 text-sm md:text-lg max-w-2xl px-2 md:px-0 print:text-gray-800">{profile?.headline || 'Establishing system branding...'}</p>
             
-            {/* QUICK FIX: THE MUTUAL TRUST GRAPH */}
+            {/* PHASE 3: THE MUTUAL TRUST GRAPH (3D CONSTELLATION MAP) */}
             {!isOwnProfile && mutualConnections.length > 0 && (
-              <div className="flex items-center gap-3 mt-4 mb-2 print:hidden bg-blue-900/10 border border-blue-500/20 w-fit px-3 py-1.5 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.1)]">
-                <div className="flex -space-x-2">
-                  {mutualConnections.map(user => (
-                    <div key={user._id} className="w-6 h-6 rounded-full border-2 border-[#0a0f1c] bg-gray-800 overflow-hidden" title={user.name}>
-                      {user.profilePictureUrl ? (
-                        <img src={getImageUrl(user.profilePictureUrl)} className="w-full h-full object-cover"/>
-                      ) : (
-                        <span className="text-[8px] flex items-center justify-center h-full w-full font-bold text-white bg-blue-600">{user.name.charAt(0)}</span>
-                      )}
-                    </div>
-                  ))}
+              <div className="w-full md:w-80 h-64 mt-5 mb-2 print:hidden rounded-2xl border border-cyan-500/20 bg-[#050810] overflow-hidden relative shadow-[0_0_20px_rgba(34,211,238,0.15)] cursor-move">
+                <div className="absolute top-3 left-3 z-10 text-[9px] font-mono text-cyan-400 uppercase tracking-widest bg-cyan-900/30 border border-cyan-500/30 px-2 py-1 rounded shadow-lg pointer-events-none flex items-center gap-1">
+                  <Network size={10} className="text-cyan-400" /> Constellation ({mutualConnections.length} Mutual)
                 </div>
-                <span className="text-xs text-blue-300 font-mono pr-2">
-                  {mutualConnections.length} Shared Node{mutualConnections.length > 1 ? 's' : ''}
-                </span>
+                <ForceGraph3D
+                  graphData={constellationData}
+                  backgroundColor="#050810"
+                  nodeLabel="name"
+                  nodeColor={() => '#22d3ee'}
+                  linkColor={() => '#60a5fa'}
+                  linkOpacity={0.6}
+                  linkWidth={1.5}
+                  nodeRelSize={5}
+                  showNavInfo={false}
+                  width={320}
+                  height={256}
+                />
               </div>
             )}
 
@@ -338,16 +444,25 @@ const ProfilePage = () => {
             )}
           </div>
 
-          <div className="mt-4 md:mt-0 z-10 shrink-0 bg-black/50 border border-white/10 p-4 rounded-2xl flex flex-col items-center w-full md:w-auto">
-             <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-2">Reputation Index</div>
-             <div className="relative w-16 h-16 flex items-center justify-center">
-                <svg className="w-full h-full transform -rotate-90">
-                   <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/5 print:text-gray-200" />
-                   <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray="175" strokeDashoffset={175 - (175 * reputation.score) / 100} className="text-blue-500 transition-all duration-1000" />
-                </svg>
-                <span className="absolute text-xl font-black text-white print:text-black">{reputation.score}</span>
-             </div>
-             <div className="text-[9px] text-blue-400 uppercase tracking-widest mt-2">Global Standing</div>
+          <div className="mt-4 md:mt-0 z-10 shrink-0 flex flex-wrap justify-center gap-4 w-full md:w-auto">
+            
+            <div className="bg-black/50 border border-emerald-500/30 p-4 rounded-2xl flex flex-col items-center justify-center min-w-[120px] shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+               <div className="text-[10px] font-mono text-emerald-500/70 uppercase tracking-widest mb-2">Escrow TVL</div>
+               <div className="text-xl font-black text-emerald-400 font-mono tracking-wider">${escrowTVL.toLocaleString()}</div>
+               <div className="text-[9px] text-emerald-500/50 uppercase tracking-widest mt-2 flex items-center gap-1"><ShieldCheck size={10} className="text-emerald-400" /> Secured</div>
+            </div>
+
+            <div className="bg-black/50 border border-white/10 p-4 rounded-2xl flex flex-col items-center min-w-[120px]">
+               <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-2">Reputation Index</div>
+               <div className="relative w-16 h-16 flex items-center justify-center">
+                  <svg className="w-full h-full transform -rotate-90">
+                     <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/5 print:text-gray-200" />
+                     <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray="175" strokeDashoffset={175 - (175 * reputation.score) / 100} className="text-blue-500 transition-all duration-1000" />
+                  </svg>
+                  <span className="absolute text-xl font-black text-white print:text-black">{reputation.score}</span>
+               </div>
+               <div className="text-[9px] text-blue-400 uppercase tracking-widest mt-2">Global Standing</div>
+            </div>
           </div>
         </div>
 
