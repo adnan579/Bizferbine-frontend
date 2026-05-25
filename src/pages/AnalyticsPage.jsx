@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Activity, Eye, MousePointerClick, Users, TrendingUp, ShieldCheck, Zap, Target, Lock } from 'lucide-react';
+import apiClient from '../utils/apiClient';
 
 const AnalyticsPage = () => {
   const [analytics, setAnalytics] = useState(null);
@@ -21,12 +22,8 @@ const AnalyticsPage = () => {
     const userId = JSON.parse(userStr).id;
 
     Promise.all([
-      fetch('https://bizferbine-backend.onrender.com/api/analytics/summary', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      }).then(res => res.json()),
-      fetch(`https://bizferbine-backend.onrender.com/api/profile/${userId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      }).then(res => res.json())
+      apiClient.get('/analytics/summary').then(res => res.json()),
+      apiClient.get(`/profile/${userId}`).then(res => res.json())
     ])
     .then(([analyticsData, profileData]) => {
       setAnalytics(analyticsData.summary || { weeklyProfileViews: 0, projectClicks: 0, mentorshipRequests: 0 });

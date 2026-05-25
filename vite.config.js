@@ -9,15 +9,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          // This splits all code inside node_modules into a separate "vendor" chunk
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-        }
-      }
-    }
+    // Silences the warning until a file hits 2 MB
+    chunkSizeWarningLimit: 2000, 
   }
 })

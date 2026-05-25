@@ -8,6 +8,7 @@ import {
   User, Eye, MousePointerClick, Code, ExternalLink, Star, UserPlus 
 } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
+import apiClient from '../utils/apiClient';
 
 // --- HELPER FUNCTIONS FOR LIVE ACTIVITY ---
 const timeAgo = (date) => {
@@ -79,9 +80,7 @@ const Dashboard = () => {
       setUser(JSON.parse(userData));
       setUnreadCount(2); 
 
-      fetch('https://bizferbine-backend.onrender.com/api/analytics/summary', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
+      apiClient.get('/analytics/summary')
       .then(res => res.json())
       .then(data => {
         setAnalytics(data.summary || { weeklyProfileViews: 0, projectClicks: 0, mentorshipRequests: 0 });
