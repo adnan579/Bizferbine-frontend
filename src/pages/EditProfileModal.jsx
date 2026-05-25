@@ -1,6 +1,7 @@
 // src/pages/EditProfileModal.jsx
 import { useState, useEffect } from 'react';
 import { X, Upload, Save, Loader2, AlertCircle, User, Briefcase, Link as LinkIcon, Zap, Video } from 'lucide-react';
+import apiClient from '../utils/apiClient';
 
 const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -72,9 +73,7 @@ const EditProfileModal = ({ profile, isOpen, onClose, onUpdate }) => {
     if (files.pitchVideo) data.append('pitchVideo', files.pitchVideo);
 
     try {
-      const response = await fetch('https://bizferbine-backend.onrender.com/api/profile', {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const response = await apiClient.put('/profile', {
         body: data, 
       });
 

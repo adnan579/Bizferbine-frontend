@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, KeyRound, Loader2, ServerCog } from 'lucide-react';
+import apiClient from '../utils/apiClient';
 
 const AdminLoginPage = () => {
   const [email, setEmail] = useState('');
@@ -17,10 +18,7 @@ const AdminLoginPage = () => {
 
     try {
       // Hit the standard login route
-      const response = await fetch('https://bizferbine-backend.onrender.com/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const response = await apiClient.post('/auth/login', {
         body: JSON.stringify({ email, password }),
       });
 
@@ -48,7 +46,7 @@ const AdminLoginPage = () => {
   // Helper to generate the account for the very first time
   const initializeAdminAccount = async () => {
     try {
-      const res = await fetch('https://bizferbine-backend.onrender.com/api/admin/init-overseer', { method: 'POST' });
+      const res = await apiClient.post('/admin/init-overseer');
       const data = await res.json();
       alert(data.message + "\n\nEmail: admin@bizferbine.com\nPassword: Overseer2026!");
     } catch (err) {

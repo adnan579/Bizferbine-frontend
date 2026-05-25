@@ -5,6 +5,7 @@ import { MapPin, Link as LinkIcon, Code, Users, Briefcase, Award, Zap, ChevronLe
 import EditProfileModal from './EditProfileModal';
 import AddPortfolioModal from './AddPortfolioModal';
 import ForceGraph3D from 'react-force-graph-3d';
+import apiClient from '../utils/apiClient'; // THE NEW ENGINE
 
 // --- SAFE IMAGE LOADER FOR CLOUDINARY ---
 const getImageUrl = (path) => {
@@ -18,15 +19,14 @@ const ProfilePage = () => {
   const [error, setError] = useState(''); 
   
   const [heatmapData, setHeatmapData] = useState([]);
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false); // NEW: Cmd+K Engine
-  const [commandInput, setCommandInput] = useState(''); // NEW: Cmd
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false); 
+  const [commandInput, setCommandInput] = useState(''); 
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isPortfolioOpen, setIsPortfolioOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isVideoOpen, setIsVideoOpen] = useState(false); // NEW: Video Node State
+  const [isVideoOpen, setIsVideoOpen] = useState(false); 
   
-  // NEW: Synthetic Node State
   const [isSyntheticChatOpen, setIsSyntheticChatOpen] = useState(false);
   const [syntheticInput, setSyntheticInput] = useState('');
   const [syntheticChatLog, setSyntheticChatLog] = useState([]);
@@ -46,15 +46,14 @@ const ProfilePage = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/profile/${targetProfileId}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      // 🚀 REFACTORED: Unified GET request
+      const response = await apiClient.get(`/profile/${targetProfileId}`);
       const data = await response.json();
       if (response.ok) setProfileData(data);
       else setError(data.message || 'Failed to load profile.');
       
-      // Phase 2: Fetch Telemetry Heatmap Data
-      const hmRes = await fetch(`https://bizferbine-backend.onrender.com/api/profile/${targetProfileId}/heatmap`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }});
+      // 🚀 REFACTORED: Unified GET request
+      const hmRes = await apiClient.get(`/profile/${targetProfileId}/heatmap`);
       if (hmRes.ok) setHeatmapData(await hmRes.json());
       
     } catch (err) { setError('Server connection error.'); } 
@@ -82,18 +81,16 @@ const ProfilePage = () => {
 
   const handleFollowToggle = async () => {
     try {
-      const res = await fetch(`https://bizferbine-backend.onrender.com/api/network/follow/${targetProfileId}`, {
-        method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      // 🚀 REFACTORED: Unified POST request
+      const res = await apiClient.post(`/network/follow/${targetProfileId}`);
       if (res.ok) fetchProfile(); 
     } catch (err) { console.error('Follow error', err); }
   };
 
   const handleConnectRequest = async () => {
     try {
-      const res = await fetch(`https://bizferbine-backend.onrender.com/api/network/connect/${targetProfileId}`, {
-        method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      // 🚀 REFACTORED: Unified POST request
+      const res = await apiClient.post(`/network/connect/${targetProfileId}`);
       const data = await res.json();
       alert(data.message); 
     } catch (err) { console.error('Connect error', err); }
@@ -101,12 +98,8 @@ const ProfilePage = () => {
 
   const trackOutboundClick = (eventType, metadata = {}) => {
     if (isOwnProfile) return; 
-    fetch('https://bizferbine-backend.onrender.com/api/analytics/track', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}` 
-      },
+    // 🚀 REFACTORED: Unified POST request
+    apiClient.post('/analytics/track', {
       body: JSON.stringify({ targetUser: targetProfileId, eventType, metadata })
     }).catch(err => console.error('Analytics ping failed', err)); 
   };
@@ -121,12 +114,8 @@ const ProfilePage = () => {
     setIsSyntheticLoading(true);
 
     try {
-      const res = await fetch(`https://bizferbine-backend.onrender.com/api/profile/${targetProfileId}/synthetic-chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
+      // 🚀 REFACTORED: Unified POST request
+      const res = await apiClient.post(`/profile/${targetProfileId}/synthetic-chat`, {
         body: JSON.stringify({ prompt: syntheticInput })
       });
       const data = await res.json();
@@ -141,10 +130,8 @@ const ProfilePage = () => {
   const handleDeletePortfolio = async (portfolioId) => {
     if (!window.confirm('Are you sure you want to delete this case study?')) return;
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/profile/portfolio/${portfolioId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      // 🚀 REFACTORED: Unified DELETE request
+      const response = await apiClient.delete(`/profile/portfolio/${portfolioId}`);
       if (response.ok) {
         const data = await response.json();
         setProfileData(prev => ({ ...prev, profile: { ...prev.profile, portfolio: data.portfolio } }));
@@ -155,10 +142,8 @@ const ProfilePage = () => {
   const handleDeleteInsight = async (insightId) => {
     if (!window.confirm('Are you sure you want to delete this insight?')) return;
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/insights/${insightId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      // 🚀 REFACTORED: Unified DELETE request
+      const response = await apiClient.delete(`/insights/${insightId}`);
       if (response.ok) {
         const updatedFeed = profileData.thoughtLeadershipFeed.filter(insight => insight._id !== insightId);
         setProfileData(prev => ({ ...prev, thoughtLeadershipFeed: updatedFeed }));
@@ -178,23 +163,16 @@ const ProfilePage = () => {
   const staminaStatus = profileData?.staminaStatus || 'Stable';
   const escrowTVL = profileData?.escrowTVL || 0;
 
-  // PHASE 1: PROOF-OF-WORK SKILL VERIFICATION
   const verifiedSkills = new Set(profileData?.verifiedSkills || []);
 
-  // PHASE 2: TELEMETRY HEATMAP (NATIVE GENERATION)
-  // Creates a clean 90-day array to render the exact GitHub style squares safely
   const last90Days = Array.from({length: 90}, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (89 - i));
     return d.toISOString().split('T')[0];
   });
 
-  // PHASE 4: PDF EXPORT TRIGGER
-  const handleExportPDF = () => {
-    window.print();
-  };
+  const handleExportPDF = () => window.print();
 
-  // PHASE 3: 3D CONSTELLATION MAP DATA
   const constellationData = {
     nodes: [
       { id: profile?._id || 'target', name: profile?.name || 'Unknown User' },
@@ -206,7 +184,6 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-blue-500/30 pb-20 print:bg-white print:text-black print:pb-0">
 
-      {/* PHASE 3: THE ASYNCHRONOUS ELEVATOR PITCH MODAL */}
       {isVideoOpen && profile?.pitchVideoUrl && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
           <div className="w-full max-w-sm bg-[#0a0f1c] border border-purple-500/30 rounded-3xl overflow-hidden relative shadow-[0_0_50px_rgba(147,51,234,0.3)] animate-in zoom-in-95">
@@ -217,7 +194,6 @@ const ProfilePage = () => {
         </div>
       )}
       
-      {/* PHASE 5: SYNTHETIC NODE CHAT MODAL */}
       {isSyntheticChatOpen && (
         <div className="fixed inset-0 z-[150] flex justify-center items-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in">
           <div className="w-full max-w-lg bg-[#0a0f1c] border border-cyan-500/30 rounded-3xl shadow-[0_0_50px_rgba(6,182,212,0.2)] p-6 md:p-8 flex flex-col h-[60vh] max-h-[80vh] animate-in zoom-in-95">
@@ -261,7 +237,6 @@ const ProfilePage = () => {
         </div>
       )}
 
-      {/* PHASE 4: CMD+K COMMAND PALETTE */}
       {isCommandPaletteOpen && (
         <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[20vh] bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="w-full max-w-2xl bg-[#050810] border border-cyan-500/30 rounded-2xl shadow-[0_0_50px_rgba(34,211,238,0.15)] overflow-hidden">
@@ -316,16 +291,12 @@ const ProfilePage = () => {
         
         {isOwnProfile && (
           <div className="absolute top-4 right-4 z-20 flex items-center gap-2 md:gap-3 print:hidden">
-            {/* PDF EXPORT BUTTON */}
             <button onClick={handleExportPDF} className="p-2 md:p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full transition shadow-[0_0_15px_rgba(37,99,235,0.4)]" title="Export PDF Pitch Deck">
               <Download size={20} />
             </button>
-
-            {/* SYNTHETIC NODE TRIGGER */}
             <button onClick={() => setIsSyntheticChatOpen(true)} className="p-2 md:p-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-full transition shadow-[0_0_15px_rgba(6,182,212,0.4)]" title="Chat with Synthetic Node">
               <Bot size={20} />
             </button>
-
             <Link to="/network" className="p-2 md:p-2.5 bg-black/50 hover:bg-black/80 text-white rounded-full backdrop-blur-md transition border border-white/10 shadow-lg" title="Network Core">
               <Network size={20} />
             </Link>
@@ -344,7 +315,6 @@ const ProfilePage = () => {
         )}
 
         <div className="h-40 md:h-64 w-full bg-gradient-to-r from-blue-900 to-indigo-900 relative rounded-t-3xl overflow-hidden print:h-32">
-          {/* IMPLEMENTED CLOUDINARY SAFE LOADER */}
           {profile?.profileBannerUrl && <img src={getImageUrl(profile.profileBannerUrl)} alt="Banner" className="w-full h-full object-cover opacity-60" />}
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1c] to-transparent print:hidden"></div>
         </div>
@@ -352,7 +322,6 @@ const ProfilePage = () => {
         <div className="px-5 md:px-8 pb-6 md:pb-8 relative -mt-16 md:-mt-20 flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 text-center md:text-left">
           
           <div className={`w-28 h-28 md:w-32 md:h-32 rounded-2xl bg-[#050810] p-1 z-10 shrink-0 relative overflow-hidden transition-all duration-500 ${staminaStatus === 'Peak' ? 'border-4 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]' : staminaStatus === 'Burnout' ? 'border-4 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.6)]' : 'border-2 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]'}`}>
-             {/* IMPLEMENTED CLOUDINARY SAFE LOADER */}
              {profile?.profilePictureUrl ? (
                <img src={getImageUrl(profile.profilePictureUrl)} alt="Profile" className="w-full h-full object-cover rounded-xl" />
              ) : (
@@ -361,7 +330,6 @@ const ProfilePage = () => {
                </div>
              )}
 
-             {/* THE VIDEO NODE TRIGGER ORB */}
              {profile?.pitchVideoUrl && (
                <button onClick={() => setIsVideoOpen(true)} className="absolute bottom-[-10px] right-[-10px] w-10 h-10 bg-purple-600 hover:bg-purple-500 rounded-full border-2 border-[#0a0f1c] flex items-center justify-center animate-pulse shadow-[0_0_20px_rgba(147,51,234,0.8)] z-20 print:hidden transition">
                  <Play size={16} className="text-white fill-white ml-0.5" />
@@ -371,7 +339,6 @@ const ProfilePage = () => {
 
           <div className="flex-1 mb-2 z-10 mt-2 w-full print:text-black">
             
-            {/* PHASE 1: ACTIVE DIRECTIVE BEACON */}
             {profile?.activeDirective && profile.activeDirective.intent !== 'None' && (
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/40 text-yellow-400 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3 shadow-[0_0_15px_rgba(234,179,8,0.2)] print:bg-yellow-100 print:text-yellow-800 print:border-yellow-300">
                 <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse print:animate-none"></span>
@@ -394,7 +361,6 @@ const ProfilePage = () => {
             <p className="text-gray-400 font-mono text-[9px] md:text-[10px] tracking-widest uppercase mt-2 mb-2 print:text-gray-600">{profile?.role || 'Network User'} • {profile?.industry || 'General'}</p>
             <p className="text-gray-300 text-sm md:text-lg max-w-2xl px-2 md:px-0 print:text-gray-800">{profile?.headline || 'Establishing system branding...'}</p>
             
-            {/* PHASE 3: THE MUTUAL TRUST GRAPH (3D CONSTELLATION MAP) */}
             {!isOwnProfile && mutualConnections.length > 0 && (
               <div className="w-full md:w-80 h-64 mt-5 mb-2 print:hidden rounded-2xl border border-cyan-500/20 bg-[#050810] overflow-hidden relative shadow-[0_0_20px_rgba(34,211,238,0.15)] cursor-move">
                 <div className="absolute top-3 left-3 z-10 text-[9px] font-mono text-cyan-400 uppercase tracking-widest bg-cyan-900/30 border border-cyan-500/30 px-2 py-1 rounded shadow-lg pointer-events-none flex items-center gap-1">
@@ -419,7 +385,6 @@ const ProfilePage = () => {
             {!isOwnProfile && (
               <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-2 md:gap-3 mt-5 w-full print:hidden">
                 
-                {/* PHASE 1: DIRECT MODULE GATEWAYS */}
                 {profile?.role === 'Mentor' && (
                   <Link to={`/mentorship`} className="w-full md:w-auto flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition shadow-[0_0_15px_rgba(147,51,234,0.4)]">
                     <Award size={16} /> Request Mentorship
@@ -505,7 +470,6 @@ const ProfilePage = () => {
             )}
           </section>
 
-          {/* PHASE 2: IMMUTABLE PROOF OF ECOSYSTEM */}
           <section className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-5 md:p-6 print:border-black/10 print:bg-white">
             <h2 className="text-white font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-[10px] font-mono text-gray-500 print:text-black">
               <ShieldCheck size={14} className="text-emerald-400" /> Verified Network Telemetry
@@ -526,7 +490,6 @@ const ProfilePage = () => {
             </div>
           </section>
 
-          {/* PHASE 2: ECOSYSTEM TELEMETRY HEATMAP */}
           <section className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-5 md:p-6 print:hidden">
             <h2 className="text-white font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-[10px] font-mono text-gray-500">
               <Activity size={14} className="text-cyan-400" /> Platform Telemetry (90 Days)
@@ -555,7 +518,7 @@ const ProfilePage = () => {
             </h2>
             <div className="flex flex-wrap gap-2">
               {profile?.skills?.length > 0 ? profile.skills.map((skill, index) => {
-                const isVerified = verifiedSkills.has(skill); // Phase 1 Check
+                const isVerified = verifiedSkills.has(skill); 
                 return (
                   <span key={index} className={`px-3 py-1.5 border rounded-lg text-[10px] font-mono uppercase tracking-tighter flex items-center gap-1.5 ${isVerified ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.2)]' : 'bg-black border-white/10 text-gray-300'}`}>
                     {isVerified && <ShieldCheck size={12} className="text-yellow-400" />}

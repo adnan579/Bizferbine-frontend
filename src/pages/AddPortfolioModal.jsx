@@ -1,6 +1,7 @@
 // src/pages/AddPortfolioModal.jsx
 import { useState } from 'react';
 import { X, Upload, Save, Loader2, AlertCircle } from 'lucide-react';
+import apiClient from '../utils/apiClient';
 
 const AddPortfolioModal = ({ isOpen, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -29,9 +30,7 @@ const AddPortfolioModal = ({ isOpen, onClose, onUpdate }) => {
     if (file) data.append('projectImage', file);
 
     try {
-      const response = await fetch('https://bizferbine-backend.onrender.com/api/profile/portfolio', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const response = await apiClient.post('/profile/portfolio', {
         body: data,
       });
 
