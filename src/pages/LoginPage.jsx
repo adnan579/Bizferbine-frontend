@@ -1,6 +1,7 @@
 // src/pages/LoginPage.jsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -41,6 +42,28 @@ const LoginPage = () => {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    try {
+      const response = await fetch('https://bizferbine-backend.onrender.com/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: credentialResponse.credential })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        navigate('/dashboard');
+      } else {
+        setError(data.message || 'Google Login failed.');
+      }
+    } catch (err) {
+      console.error('Google Login Error:', err);
+      setError('Cannot connect to server for Google authentication.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 font-sans text-white">
       <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 w-full max-w-md shadow-2xl">
@@ -75,6 +98,9 @@ const LoginPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <div className="flex justify-end mt-2">
+              <Link to="/forgot-password" className="text-sm text-gray-400 hover:text-blue-400 transition">Forgot Password? Recover Node Access</Link>
+            </div>
           </div>
 
           <button 
@@ -84,6 +110,22 @@ const LoginPage = () => {
             Sign In
           </button>
         </form>
+
+        <div className="mt-8 flex items-center justify-center space-x-4">
+          <div className="h-px bg-gray-700 flex-1"></div>
+          <span className="text-xs text-gray-500 font-mono uppercase tracking-widest">Or continue with</span>
+          <div className="h-px bg-gray-700 flex-1"></div>
+        </div>
+
+        <div className="mt-6 flex justify-center">
+          <GoogleLogin 
+            onSuccess={handleGoogleSuccess} 
+            onError={() => setError('Google Authentication Failed.')} 
+            theme="filled_black" 
+            shape="pill" 
+            text="continue_with" 
+          />
+        </div>
 
         <p className="text-center text-gray-400 mt-6">
           Don't have an account? <Link to="/register" className="text-blue-400 hover:underline">Sign up</Link>

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, Briefcase, ShieldCheck, Zap, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -48,6 +49,28 @@ const RegisterPage = () => {
       setError('Server connection failed. Is the backend running?');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    try {
+      const response = await fetch('https://bizferbine-backend.onrender.com/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: credentialResponse.credential })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        navigate('/dashboard');
+      } else {
+        setError(data.message || 'Google Registration failed.');
+      }
+    } catch (err) {
+      console.error('Google Registration Error:', err);
+      setError('Cannot connect to server for Google authentication.');
     }
   };
 
@@ -174,6 +197,22 @@ const RegisterPage = () => {
                   )}
                 </button>
               </form>
+
+              <div className="mt-8 flex items-center justify-center space-x-4">
+                <div className="h-px bg-gray-700 flex-1"></div>
+                <span className="text-xs text-gray-500 font-mono uppercase tracking-widest">Or continue with</span>
+                <div className="h-px bg-gray-700 flex-1"></div>
+              </div>
+
+              <div className="mt-6 flex justify-center">
+                <GoogleLogin 
+                  onSuccess={handleGoogleSuccess} 
+                  onError={() => setError('Google Authentication Failed.')} 
+                  theme="filled_black" 
+                  shape="pill" 
+                  text="continue_with" 
+                />
+              </div>
 
               <div className="mt-8 text-center border-t border-white/5 pt-6">
                 <p className="text-xs text-gray-400 font-mono">

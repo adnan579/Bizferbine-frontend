@@ -20,6 +20,7 @@ const AdminLoginPage = () => {
       const response = await fetch('https://bizferbine-backend.onrender.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -29,8 +30,7 @@ const AdminLoginPage = () => {
         // BUG FIX: Removed the strict frontend role check. 
         // The backend verifyAdmin middleware will securely protect the actual dashboard data.
 
-        // Success! Save token and log them into the whole platform
-        localStorage.setItem('token', data.token);
+        // Success! Log them into the whole platform
         localStorage.setItem('user', JSON.stringify(data.user));
         
         // Route directly to the Admin Panel

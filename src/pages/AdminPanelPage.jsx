@@ -26,7 +26,8 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
     if (!window.confirm("KILL SWITCH: Are you sure you want to permanently delete this Insight?")) return;
     try {
       const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/content/insights/${id}`, {
-        method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        method: 'DELETE', 
+        credentials: 'include'
       });
       if (res.ok) fetchAdminData();
     } catch (err) { console.error(err); }
@@ -36,7 +37,8 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
     if (!window.confirm("KILL SWITCH: Are you sure you want to permanently delete this Event?")) return;
     try {
       const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/content/events/${id}`, {
-        method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        method: 'DELETE', 
+        credentials: 'include'
       });
       if (res.ok) fetchAdminData();
     } catch (err) { console.error(err); }
@@ -67,7 +69,7 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
     setLoadingLogs(true);
     try {
       const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/workspaces/${workspaceId}/logs?module=${moduleName}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'include'
       });
       if (res.ok) {
         setChatLogs(await res.json());
@@ -87,7 +89,7 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
         return;
       }
       
-      const statRes = await fetch('https://bizferbine-backend.onrender.com/api/admin/stats', { headers: { 'Authorization': `Bearer ${token}` } });
+      const statRes = await fetch('https://bizferbine-backend.onrender.com/api/admin/stats', { credentials: 'include' });
       
       if (statRes.status === 403 || statRes.status === 401) {
         navigate('/admin-login');
@@ -95,10 +97,10 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
       }
 
      const [dispRes, userRes, deepRes, contentRes] = await Promise.all([
-        fetch('https://bizferbine-backend.onrender.com/api/admin/disputes', { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch('https://bizferbine-backend.onrender.com/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch('https://bizferbine-backend.onrender.com/api/admin/analytics', { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch('https://bizferbine-backend.onrender.com/api/admin/content', { headers: { 'Authorization': `Bearer ${token}` } }) // NEW
+        fetch('https://bizferbine-backend.onrender.com/api/admin/disputes', { credentials: 'include' }),
+        fetch('https://bizferbine-backend.onrender.com/api/admin/users', { credentials: 'include' }),
+        fetch('https://bizferbine-backend.onrender.com/api/admin/analytics', { credentials: 'include' }),
+        fetch('https://bizferbine-backend.onrender.com/api/admin/content', { credentials: 'include' }) // NEW
       ]);
 
       if (statRes.ok) setStats(await statRes.json());
@@ -118,7 +120,8 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
     try {
       const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/disputes/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ status, note: resolutionNote })
       });
       if (res.ok) {
@@ -134,7 +137,7 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
     try {
       const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/users/${userId}/suspend`, {
         method: 'PUT',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'include'
       });
       if (res.ok) fetchAdminData();
     } catch (err) { console.error(err); }
@@ -151,9 +154,9 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
     const res = await fetch('https://bizferbine-backend.onrender.com/api/admin/broadcast', {
       method: 'POST',
       headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}` 
+        'Content-Type': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify({ message: broadcastMessage })
     });
 
@@ -206,7 +209,7 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
     try {
       const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/users/${userId}/warn`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'include'
       });
       const data = await res.json();
       if (res.ok) alert(data.message);
@@ -220,7 +223,8 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
     if (!window.confirm("NEURAL OVERRIDE: Generate a temporary session as this node?")) return;
     try {
       const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/ghost-auth/${userId}`, {
-        method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        method: 'POST', 
+        credentials: 'include'
       });
       const data = await res.json();
       if (res.ok) {
@@ -238,7 +242,8 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
     try {
       const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/users/${userId}/badges`, {
         method: 'POST', 
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ badge })
       });
       if (res.ok) {
@@ -660,7 +665,8 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
                       if(!window.confirm("VAULT QUARANTINE: Freeze this Deal Room and lock all operations?")) return;
                       try {
                         const res = await fetch(`https://bizferbine-backend.onrender.com/api/admin/deals/${selectedDispute.reportedEntityId}/freeze`, {
-                          method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                          method: 'POST', 
+                          credentials: 'include'
                         });
                         if (res.ok) { alert("Vault Frozen Successfully."); fetchAdminData(); setSelectedDispute(null); }
                         else alert((await res.json()).message);
