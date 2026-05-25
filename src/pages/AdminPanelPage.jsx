@@ -83,8 +83,8 @@ const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   const fetchAdminData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      const user = localStorage.getItem('user');
+      if (!user) {
         navigate('/admin-login');
         return;
       }
