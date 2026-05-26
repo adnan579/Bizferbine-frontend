@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Send, MessageSquareLock, Search, UserCheck } from 'lucide-react';
+import apiClient from '../utils/apiClient';
 
 const MessagesPage = () => {
   const [contacts, setContacts] = useState([]);
@@ -9,10 +10,10 @@ const MessagesPage = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  
+
   // NEW: STATE FOR THE SEARCH BAR
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
@@ -29,9 +30,7 @@ const MessagesPage = () => {
     }
     const fetchContacts = async () => {
       try {
-        const res = await fetch('https://bizferbine-backend.onrender.com/api/network/connections', {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
+        const res = await apiClient.get('/network/connections');
         if (res.ok) setContacts(await res.json());
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
@@ -43,9 +42,7 @@ const MessagesPage = () => {
     if (!activeContact) return;
     const fetchMessages = async () => {
       try {
-        const res = await fetch(`https://bizferbine-backend.onrender.com/api/messages/${activeContact._id}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
+        const res = await apiClient.get(`/messages/${activeContact._id}`);
         if (res.ok) setMessages(await res.json());
       } catch (err) { console.error(err); }
     };
@@ -61,26 +58,21 @@ const MessagesPage = () => {
     if (!newMessage.trim() || !activeContact) return;
 
     try {
-      const res = await fetch(`https://bizferbine-backend.onrender.com/api/messages/${activeContact._id}`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
-        },
+      const res = await apiClient.post(`/messages/${activeContact._id}`, {
         body: JSON.stringify({ content: newMessage })
       });
-      
+
       if (res.ok) {
         const data = await res.json();
-        setMessages(prev => [...prev, data.data]); 
-        setNewMessage(''); 
+        setMessages(prev => [...prev, data.data]);
+        setNewMessage('');
       }
     } catch (err) { console.error(err); }
   };
 
   // NEW: FILTER THE CONTACTS BASED ON THE SEARCH QUERY
-  const filteredContacts = contacts.filter(contact => 
-    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredContacts = contacts.filter(contact =>
+    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (contact.role && contact.role.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
@@ -88,7 +80,7 @@ const MessagesPage = () => {
 
   return (
     <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-blue-500/30 flex flex-col h-screen overflow-hidden">
-      
+
       <nav className="shrink-0 z-50 backdrop-blur-xl bg-[#050810]/70 border-b border-white/5 p-4 flex justify-between items-center">
         <div className="flex items-center gap-6">
           <Link to="/dashboard" className="p-2 text-gray-400 hover:text-blue-400 transition bg-white/5 rounded-full">
@@ -108,17 +100,17 @@ const MessagesPage = () => {
           <div className="p-4 border-b border-white/5">
             <div className="relative">
               {/* UPDATED: WIRED THE SEARCH INPUT */}
-              <input 
-                type="text" 
-                placeholder="Search Connections..." 
+              <input
+                type="text"
+                placeholder="Search Connections..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-black/50 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-rose-500 transition text-white placeholder-gray-600" 
+                className="w-full bg-black/50 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-rose-500 transition text-white placeholder-gray-600"
               />
               <Search size={14} className="absolute left-4 top-3 text-gray-500" />
             </div>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto">
             {filteredContacts.length === 0 ? (
               <div className="p-8 text-center flex flex-col items-center gap-3">
@@ -127,14 +119,14 @@ const MessagesPage = () => {
               </div>
             ) : (
               filteredContacts.map(contact => (
-                <button 
+                <button
                   key={contact._id}
                   onClick={() => setActiveContact(contact)}
                   className={`w-full p-4 flex items-center gap-4 text-left border-b border-white/5 hover:bg-white/5 transition relative ${activeContact?._id === contact._id ? 'bg-rose-500/10 border-l-2 border-l-rose-500' : 'border-l-2 border-l-transparent'}`}
                 >
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-rose-600 p-[1px] shrink-0">
                     <div className="w-full h-full rounded-full bg-[#050810] flex items-center justify-center font-bold text-white overflow-hidden">
-                     {contact.profilePictureUrl ? <img src={contact.profilePictureUrl.startsWith('http') ? contact.profilePictureUrl : `https://bizferbine-backend.onrender.com/${contact.profilePictureUrl}`} className="w-full h-full object-cover" /> : contact.name.charAt(0)}
+                      {contact.profilePictureUrl ? <img src={contact.profilePictureUrl.startsWith('http') ? contact.profilePictureUrl : `https://bizferbine-backend.onrender.com/${contact.profilePictureUrl}`} className="w-full h-full object-cover" /> : contact.name.charAt(0)}
                     </div>
                   </div>
                   <div className="flex-1 overflow-hidden">
@@ -158,9 +150,9 @@ const MessagesPage = () => {
             <>
               <div className="p-4 border-b border-white/5 bg-[#0a0f1c]/80 backdrop-blur-md flex items-center gap-4 shrink-0">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-rose-600 p-[1px] shrink-0">
-                    <div className="w-full h-full rounded-full bg-[#050810] flex items-center justify-center font-bold text-white overflow-hidden">
-                   {activeContact.profilePictureUrl ? <img src={activeContact.profilePictureUrl.startsWith('http') ? activeContact.profilePictureUrl : `https://bizferbine-backend.onrender.com/${activeContact.profilePictureUrl}`} className="w-full h-full object-cover" /> : activeContact.name.charAt(0)}
-                    </div>
+                  <div className="w-full h-full rounded-full bg-[#050810] flex items-center justify-center font-bold text-white overflow-hidden">
+                    {activeContact.profilePictureUrl ? <img src={activeContact.profilePictureUrl.startsWith('http') ? activeContact.profilePictureUrl : `https://bizferbine-backend.onrender.com/${activeContact.profilePictureUrl}`} className="w-full h-full object-cover" /> : activeContact.name.charAt(0)}
+                  </div>
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-white leading-tight">{activeContact.name}</h2>
@@ -193,8 +185,8 @@ const MessagesPage = () => {
 
               <div className="p-4 bg-[#0a0f1c]/90 border-t border-white/5 backdrop-blur-xl shrink-0">
                 <form onSubmit={handleSendMessage} className="flex gap-3">
-                  <input 
-                    type="text" required placeholder="Type an encrypted message..." 
+                  <input
+                    type="text" required placeholder="Type an encrypted message..."
                     value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
                     className="flex-1 bg-black border border-white/10 rounded-full px-6 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition"
                   />

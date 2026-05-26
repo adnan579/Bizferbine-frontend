@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Image as ImageIcon, Send, ThumbsUp, MessageSquare, Zap, Loader2, Share2, Flag } from 'lucide-react';
+import apiClient from '../utils/apiClient';
 
 // --- SAFE IMAGE LOADER FOR CLOUDINARY ---
 const getImageUrl = (path) => {
@@ -13,7 +14,7 @@ const InsightsPage = () => {
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   const [formData, setFormData] = useState({ title: '', content: '', tags: '' });
   const [imageFile, setImageFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,15 +32,13 @@ const InsightsPage = () => {
 
   const fetchInsights = async () => {
     try {
-      const response = await fetch('https://bizferbine-backend.onrender.com/api/insights', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await apiClient.get('/insights');
       if (response.ok) {
         setInsights(await response.json());
       } else {
         setError('Failed to load insights feed.');
       }
-    } catch (err) { setError('Server connection error.'); } 
+    } catch (err) { setError('Server connection error.'); }
     finally { setLoading(false); }
   };
 
@@ -58,9 +57,7 @@ const InsightsPage = () => {
     if (imageFile) data.append('image', imageFile);
 
     try {
-      const response = await fetch('https://bizferbine-backend.onrender.com/api/insights', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const response = await apiClient.post('/insights', {
         body: data,
       });
       if (response.ok) {
@@ -70,22 +67,19 @@ const InsightsPage = () => {
       } else {
         alert('Failed to publish insight.');
       }
-    } catch (err) { console.error(err); } 
+    } catch (err) { console.error(err); }
     finally { setIsSubmitting(false); }
   };
 
   const handleLike = async (insightId) => {
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/insights/${insightId}/like`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await apiClient.put(`/insights/${insightId}/like`);
       if (response.ok) {
         setInsights(insights.map(insight => {
           if (insight._id === insightId) {
             const hasLiked = insight.likes.includes(loggedInUser.id);
-            const newLikesArray = hasLiked 
-              ? insight.likes.filter(id => id !== loggedInUser.id) 
+            const newLikesArray = hasLiked
+              ? insight.likes.filter(id => id !== loggedInUser.id)
               : [...insight.likes, loggedInUser.id];
             return { ...insight, likes: newLikesArray };
           }
@@ -105,19 +99,14 @@ const InsightsPage = () => {
     if (!commentText.trim()) return;
 
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/insights/${insightId}/comment`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
-        },
+      const response = await apiClient.post(`/insights/${insightId}/comment`, {
         body: JSON.stringify({ text: commentText })
       });
 
       if (response.ok) {
         const data = await response.json();
         setInsights(insights.map(i => i._id === insightId ? data.insight : i));
-        setCommentText(''); 
+        setCommentText('');
       }
     } catch (err) {
       console.error('Failed to post comment:', err);
@@ -128,12 +117,7 @@ const InsightsPage = () => {
   const handleFlagInsight = async (insightId) => {
     if (!window.confirm('Are you sure you want to flag this content to the platform admins?')) return;
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/disputes`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
-        },
+      const response = await apiClient.post('/disputes', {
         body: JSON.stringify({ reportedEntityId: insightId, module: 'Insights', reason: 'Automated queue flag from user feed.' })
       });
       if (response.ok) {
@@ -168,24 +152,24 @@ const InsightsPage = () => {
         <div className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-6 mb-10 shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-[50px] pointer-events-none"></div>
           <form onSubmit={handleSubmit} className="relative z-10 space-y-4">
-            <input 
-              type="text" required placeholder="Insight Title (e.g., The Future of Node.js Scaling)" 
-              value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})}
+            <input
+              type="text" required placeholder="Insight Title (e.g., The Future of Node.js Scaling)"
+              value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="w-full bg-transparent border-b border-white/10 pb-2 text-lg font-bold text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition"
             />
-            <textarea 
+            <textarea
               required rows="3" placeholder="Share your expertise (Max 120 words)..."
-              value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})}
+              value={formData.content} onChange={(e) => setFormData({ ...formData, content: e.target.value })}
               className="w-full bg-transparent border-none text-sm text-gray-300 placeholder-gray-600 focus:outline-none resize-none"
             />
-            <input 
-              type="text" placeholder="Tags (comma separated)" 
-              value={formData.tags} onChange={(e) => setFormData({...formData, tags: e.target.value})}
+            <input
+              type="text" placeholder="Tags (comma separated)"
+              value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
               className="w-full bg-black/50 border border-white/5 rounded-lg px-4 py-2 text-xs font-mono text-blue-400 placeholder-gray-700 focus:outline-none focus:border-blue-500/50 transition"
             />
             <div className="flex justify-between items-center pt-2">
               <label className="flex items-center gap-2 text-gray-400 hover:text-blue-400 cursor-pointer transition text-xs font-mono uppercase tracking-widest bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg">
-                <ImageIcon size={16} /> 
+                <ImageIcon size={16} />
                 {imageFile ? <span className="truncate max-w-[100px]">{imageFile.name}</span> : 'Attach Vector'}
                 <input type="file" hidden accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} />
               </label>
@@ -227,27 +211,27 @@ const InsightsPage = () => {
 
                 {/* Interaction Footer */}
                 <div className="flex items-center gap-6 pt-4 border-t border-white/5">
-                  <button 
+                  <button
                     onClick={() => handleLike(insight._id)}
                     className={`flex items-center gap-2 text-xs font-mono tracking-widest uppercase transition ${hasLiked ? 'text-blue-400' : 'text-gray-500 hover:text-white'}`}
                   >
-                    <ThumbsUp size={16} className={hasLiked ? "fill-blue-400/20" : ""} /> 
+                    <ThumbsUp size={16} className={hasLiked ? "fill-blue-400/20" : ""} />
                     {insight.likes?.length || 0} Likes
                   </button>
-                  <button 
+                  <button
                     onClick={() => setActiveCommentId(isCommenting ? null : insight._id)}
                     className={`flex items-center gap-2 text-xs font-mono tracking-widest uppercase transition ${isCommenting ? 'text-purple-400' : 'text-gray-500 hover:text-white'}`}
                   >
-                    <MessageSquare size={16} className={isCommenting ? "fill-purple-400/20" : ""} /> 
+                    <MessageSquare size={16} className={isCommenting ? "fill-purple-400/20" : ""} />
                     {insight.comments?.length || 0} Comments
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleShare(insight._id)}
                     className="flex items-center gap-2 text-xs font-mono text-gray-500 hover:text-emerald-400 tracking-widest uppercase transition ml-auto"
                   >
                     <Share2 size={16} /> Share
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleFlagInsight(insight._id)}
                     className="flex items-center gap-2 text-[10px] font-mono text-rose-500/70 hover:text-rose-400 tracking-widest uppercase transition ml-4"
                     title="Flag for Moderation"
@@ -274,9 +258,9 @@ const InsightsPage = () => {
                       )}
                     </div>
                     <form onSubmit={(e) => handleCommentSubmit(e, insight._id)} className="flex gap-2">
-                      <input 
-                        type="text" 
-                        placeholder="Add to the discussion..." 
+                      <input
+                        type="text"
+                        placeholder="Add to the discussion..."
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
                         className="flex-1 bg-black border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"

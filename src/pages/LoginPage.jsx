@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
+import apiClient from '../utils/apiClient';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -15,11 +16,7 @@ const LoginPage = () => {
 
     try {
       // 1. Send the data to your Node.js backend
-      const response = await fetch('https://bizferbine-backend.onrender.com/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await apiClient.post('/auth/login', {
         body: JSON.stringify({ email, password }),
       });
 
@@ -30,7 +27,7 @@ const LoginPage = () => {
         // Save the Digital ID Card (Token) in the browser's memory
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
+
         // Send the user to the main platform!
         navigate('/dashboard');
       } else {
@@ -45,9 +42,7 @@ const LoginPage = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     setError('');
     try {
-      const response = await fetch('https://bizferbine-backend.onrender.com/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await apiClient.post('/auth/google', {
         body: JSON.stringify({ credential: credentialResponse.credential })
       });
       const data = await response.json();
@@ -68,7 +63,7 @@ const LoginPage = () => {
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 font-sans text-white">
       <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 w-full max-w-md shadow-2xl">
         <h2 className="text-3xl font-bold text-center mb-6 text-blue-400">Welcome Back</h2>
-        
+
         {error && (
           <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded mb-6 text-center">
             {error}
@@ -78,8 +73,8 @@ const LoginPage = () => {
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
             <label className="block text-gray-400 mb-2">Email Address</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
               placeholder="adnan@bizferbine.com"
               value={email}
@@ -90,8 +85,8 @@ const LoginPage = () => {
 
           <div>
             <label className="block text-gray-400 mb-2">Password</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
               placeholder="••••••••"
               value={password}
@@ -103,8 +98,8 @@ const LoginPage = () => {
             </div>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition shadow-lg shadow-blue-500/30"
           >
             Sign In
@@ -118,12 +113,12 @@ const LoginPage = () => {
         </div>
 
         <div className="mt-6 flex justify-center">
-          <GoogleLogin 
-            onSuccess={handleGoogleSuccess} 
-            onError={() => setError('Google Authentication Failed.')} 
-            theme="filled_black" 
-            shape="pill" 
-            text="continue_with" 
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError('Google Authentication Failed.')}
+            theme="filled_black"
+            shape="pill"
+            text="continue_with"
           />
         </div>
 

@@ -1,25 +1,26 @@
 // src/pages/MentorshipPage.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { 
-  ChevronLeft, BrainCircuit, Users, Send, CheckCircle2, 
-  XCircle, Search, Plus, Calendar, Clock, Loader2, 
-  Sparkles, Star, Target, MessageSquare, ShieldCheck, Award 
+import {
+  ChevronLeft, BrainCircuit, Users, Send, CheckCircle2,
+  XCircle, Search, Plus, Calendar, Clock, Loader2,
+  Sparkles, Star, Target, MessageSquare, ShieldCheck, Award
 } from 'lucide-react';
+import apiClient from '../utils/apiClient';
 
 const MentorshipPage = () => {
   // New Tabs: 'workspaces' (Active), 'pending' (Inbox), 'matchmaker' (Discover), 'apply' (Broadcast)
-  const [activeTab, setActiveTab] = useState('workspaces'); 
+  const [activeTab, setActiveTab] = useState('workspaces');
   const [loading, setLoading] = useState(true);
-  
+
   // Data States
   const [requests, setRequests] = useState([]);
   const [algorithmicMatches, setAlgorithmicMatches] = useState([]);
-  
+
   // Form States
   const [applyForm, setApplyForm] = useState({ title: '', description: '' });
   const [isApplying, setIsApplying] = useState(false);
-  
+
   // Offer Modal State
   const [activeOfferApp, setActiveOfferApp] = useState(null);
   const [offerMessage, setOfferMessage] = useState('');
@@ -35,9 +36,7 @@ const MentorshipPage = () => {
   // --- FETCH DATA ---
   const fetchRequests = async () => {
     try {
-      const res = await fetch('https://bizferbine-backend.onrender.com/api/mentorship', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await apiClient.get('/mentorship');
       if (res.ok) setRequests(await res.json());
     } catch (err) { console.error(err); }
   };
@@ -45,9 +44,7 @@ const MentorshipPage = () => {
   const fetchMatches = async () => {
     setLoading(true);
     try {
-      const res = await fetch('https://bizferbine-backend.onrender.com/api/mentorship-board/matches', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await apiClient.get('/mentorship-board/matches');
       if (res.ok) {
         const data = await res.json();
         setAlgorithmicMatches(data.matches || []);
@@ -73,9 +70,7 @@ const MentorshipPage = () => {
     e.preventDefault();
     setIsApplying(true);
     try {
-      const res = await fetch('https://bizferbine-backend.onrender.com/api/mentorship-board/apply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const res = await apiClient.post('/mentorship-board/apply', {
         body: JSON.stringify(applyForm)
       });
       if (res.ok) {
@@ -93,16 +88,14 @@ const MentorshipPage = () => {
   const handleSendOffer = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`https://bizferbine-backend.onrender.com/api/mentorship-board/${activeOfferApp._id}/offer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const res = await apiClient.post(`/mentorship-board/${activeOfferApp._id}/offer`, {
         body: JSON.stringify({ message: offerMessage })
       });
       if (res.ok) {
         alert('Offer Sent to Mentee!');
         setActiveOfferApp(null);
         setOfferMessage('');
-        fetchMatches(); 
+        fetchMatches();
       } else {
         const data = await res.json();
         alert(data.message);
@@ -112,9 +105,7 @@ const MentorshipPage = () => {
 
   const handleUpdateStatus = async (id, status) => {
     try {
-      const res = await fetch(`https://bizferbine-backend.onrender.com/api/mentorship/${id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const res = await apiClient.put(`/mentorship/${id}/status`, {
         body: JSON.stringify({ status })
       });
       if (res.ok) {
@@ -132,7 +123,7 @@ const MentorshipPage = () => {
 
   return (
     <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-purple-500/30 pb-20 relative overflow-hidden">
-      
+
       {/* Background Glow */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none"></div>
 
@@ -144,7 +135,7 @@ const MentorshipPage = () => {
       </nav>
 
       <main className="max-w-6xl mx-auto mt-8 px-4 sm:px-6 relative z-10">
-        
+
         <div className="mb-8 text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-6 border-b border-white/5 pb-8">
           <div>
             <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight flex items-center justify-center md:justify-start gap-4 mb-2">
@@ -191,7 +182,7 @@ const MentorshipPage = () => {
                   return (
                     <div key={req._id} className="bg-gradient-to-br from-[#0a0f1c] to-[#050810] border border-purple-500/20 rounded-3xl p-6 relative overflow-hidden group hover:border-purple-500/50 transition-colors">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-[50px] group-hover:bg-purple-500/10 transition-colors"></div>
-                      
+
                       <div className="flex justify-between items-start mb-6 relative z-10">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-full bg-purple-900/30 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold text-lg">
@@ -203,7 +194,7 @@ const MentorshipPage = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Lifecycle Progress UI */}
                       <div className="mb-6 bg-black/40 rounded-xl p-4 border border-white/5">
                         <div className="flex justify-between text-xs text-gray-400 mb-2 font-bold uppercase tracking-wider">
@@ -227,10 +218,10 @@ const MentorshipPage = () => {
 
                       <div className="flex gap-3 relative z-10">
                         <button className="flex-1 bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-lg">
-                          Enter Workspace <ChevronRight size={16}/>
+                          Enter Workspace <ChevronRight size={16} />
                         </button>
                         <button className="bg-white/5 hover:bg-white/10 text-white p-3 rounded-xl transition border border-white/10">
-                          <MessageSquare size={20}/>
+                          <MessageSquare size={20} />
                         </button>
                       </div>
                     </div>
@@ -263,7 +254,7 @@ const MentorshipPage = () => {
                           {isMentor ? 'Inbound Request' : 'Outbound Request'}
                         </span>
                       </div>
-                      
+
                       <div className="bg-black/50 p-4 rounded-xl border border-white/5 mb-4 relative">
                         <MessageSquare size={14} className="absolute top-4 right-4 text-gray-600" />
                         <p className="text-sm text-gray-300 italic pr-6">"{req.message}"</p>
@@ -273,10 +264,10 @@ const MentorshipPage = () => {
                       {isMentor ? (
                         <div className="flex gap-3 mt-auto">
                           <button onClick={() => handleUpdateStatus(req._id, 'Accepted')} className="flex-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border border-emerald-500/30 py-2.5 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
-                            <CheckCircle2 size={16}/> Accept Mentee
+                            <CheckCircle2 size={16} /> Accept Mentee
                           </button>
                           <button onClick={() => handleUpdateStatus(req._id, 'Declined')} className="flex-1 bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-800/30 py-2.5 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
-                            <XCircle size={16}/> Decline
+                            <XCircle size={16} /> Decline
                           </button>
                         </div>
                       ) : (
@@ -297,7 +288,7 @@ const MentorshipPage = () => {
           <div className="space-y-6 animate-in fade-in">
             <div className="bg-gradient-to-r from-blue-900/30 to-indigo-900/10 border border-blue-500/20 p-6 rounded-3xl mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2"><Sparkles className="text-blue-400"/> Network Scanning Active</h2>
+                <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2"><Sparkles className="text-blue-400" /> Network Scanning Active</h2>
                 <p className="text-sm text-blue-200/70">The algorithm has found users broadcasting goals that match your expertise profile.</p>
               </div>
               <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-bold transition border border-white/10 whitespace-nowrap">
@@ -338,12 +329,12 @@ const MentorshipPage = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <h4 className="text-md font-bold text-white mb-2">{app.title}</h4>
                     <p className="text-sm text-gray-400 mb-6 flex-1 line-clamp-3">{app.description}</p>
-                    
+
                     <button onClick={() => setActiveOfferApp(app)} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-lg group-hover:shadow-[0_0_20px_rgba(37,99,235,0.3)]">
-                      <Send size={16}/> Dispatch Mentorship Offer
+                      <Send size={16} /> Dispatch Mentorship Offer
                     </button>
                   </div>
                 ))}
@@ -360,15 +351,15 @@ const MentorshipPage = () => {
             </div>
             <h2 className="text-2xl font-black text-white mb-2">Broadcast a Mentorship Goal</h2>
             <p className="text-sm text-gray-400 mb-8 leading-relaxed">Stop guessing. Define exactly what you are trying to achieve, and our algorithm will route your goal to verified mentors with the specific skills you need.</p>
-            
+
             <form onSubmit={handleApply} className="space-y-5">
               <div className="space-y-2">
                 <label className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">Target Objective</label>
-                <input required type="text" value={applyForm.title} onChange={(e) => setApplyForm({...applyForm, title: e.target.value})} placeholder="e.g. Need guidance scaling a SaaS startup from 10 to 100 users" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition" />
+                <input required type="text" value={applyForm.title} onChange={(e) => setApplyForm({ ...applyForm, title: e.target.value })} placeholder="e.g. Need guidance scaling a SaaS startup from 10 to 100 users" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">Current Context & Roadblocks</label>
-                <textarea required rows="5" value={applyForm.description} onChange={(e) => setApplyForm({...applyForm, description: e.target.value})} placeholder="Explain where you are currently at, the roadblocks you are facing, and what a successful outcome looks like..." className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none resize-none transition" />
+                <textarea required rows="5" value={applyForm.description} onChange={(e) => setApplyForm({ ...applyForm, description: e.target.value })} placeholder="Explain where you are currently at, the roadblocks you are facing, and what a successful outcome looks like..." className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none resize-none transition" />
               </div>
               <button disabled={isApplying} type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] mt-4">
                 {isApplying ? <Loader2 size={18} className="animate-spin" /> : 'Publish to Ecosystem'}
@@ -384,14 +375,14 @@ const MentorshipPage = () => {
           <div className="w-full max-w-lg bg-[#0a0f1c] border border-blue-500/30 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.15)] p-8 animate-in zoom-in-95 duration-200">
             <h2 className="text-xl font-black text-white tracking-tight mb-2">Draft Mentorship Offer</h2>
             <p className="text-sm text-gray-400 mb-6">Offering guidance to <span className="text-blue-400 font-bold">{activeOfferApp.mentee?.name}</span></p>
-            
+
             <form onSubmit={handleSendOffer} className="space-y-4">
-              <textarea 
-                required rows="4" 
-                value={offerMessage} 
-                onChange={(e) => setOfferMessage(e.target.value)} 
-                placeholder="Introduce yourself, explain how your experience aligns with their problem, and propose a next step..." 
-                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none resize-none transition" 
+              <textarea
+                required rows="4"
+                value={offerMessage}
+                onChange={(e) => setOfferMessage(e.target.value)}
+                placeholder="Introduce yourself, explain how your experience aligns with their problem, and propose a next step..."
+                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none resize-none transition"
               />
               <div className="flex gap-3">
                 <button type="button" onClick={() => setActiveOfferApp(null)} className="flex-1 bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl text-sm font-bold transition">Cancel</button>
@@ -411,4 +402,4 @@ const MentorshipPage = () => {
 export default MentorshipPage;
 
 // Mock ChevronRight Icon component just in case it wasn't imported from lucide-react above.
-const ChevronRight = ({size}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
+const ChevronRight = ({ size }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>;

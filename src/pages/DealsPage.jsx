@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Briefcase, ChevronLeft, ShieldCheck, Send, Plus, DollarSign, CheckCircle2, XCircle, Clock, FileText, Trash2, Share2, Paperclip, AlertCircle, ShieldAlert } from 'lucide-react';
 import { useAutonomicGovernor } from '../hooks/useAutonomicGovernor';
+import apiClient from '../utils/apiClient';
 
 const DealsPage = () => {
   const [deals, setDeals] = useState([]);
@@ -29,9 +30,7 @@ const DealsPage = () => {
 
   const fetchDeals = async () => {
     try {
-      const response = await fetch('https://bizferbine-backend.onrender.com/api/deals', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await apiClient.get('/deals');
       if (response.ok) {
         const data = await response.json();
         setDeals(data);
@@ -54,9 +53,7 @@ const DealsPage = () => {
     e.preventDefault();
     setCreateError('');
     try {
-      const response = await fetch('https://bizferbine-backend.onrender.com/api/deals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const response = await apiClient.post('/deals', {
         body: JSON.stringify(newDealForm)
       });
       const data = await response.json();
@@ -77,9 +74,7 @@ const DealsPage = () => {
     if (!proposalMsg.trim()) return;
 
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/deals/${activeDeal._id}/proposals`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const response = await apiClient.post(`/deals/${activeDeal._id}/proposals`, {
         body: JSON.stringify({ message: proposalMsg, amount: Number(proposalAmt) || 0 })
       });
       if (response.ok) {
@@ -98,9 +93,8 @@ const DealsPage = () => {
     formData.append('document', file);
 
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/deals/${activeDeal._id}/documents`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      // apiClient naturally omits Content-Type for FormData objects, enabling browser multipart boundary creation
+      const response = await apiClient.post(`/deals/${activeDeal._id}/documents`, {
         body: formData
       });
       if (response.ok) fetchDeals();
@@ -111,9 +105,7 @@ const DealsPage = () => {
   const handleUpdateStatus = async (newStatus) => {
     if(!window.confirm(`Mark this deal as ${newStatus}?`)) return;
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/deals/${activeDeal._id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const response = await apiClient.put(`/deals/${activeDeal._id}/status`, {
         body: JSON.stringify({ status: newStatus })
       });
       if (response.ok) fetchDeals();
@@ -124,10 +116,7 @@ const DealsPage = () => {
   const handleDeleteDeal = async () => {
     if(!window.confirm(`Are you absolutely sure you want to permanently destroy this Deal Room?`)) return;
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/deals/${activeDeal._id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await apiClient.delete(`/deals/${activeDeal._id}`);
       if (response.ok) {
         setActiveDeal(null);
         fetchDeals();

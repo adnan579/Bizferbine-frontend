@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ShieldCheck, Loader2, XOctagon, KeyRound } from 'lucide-react';
+import apiClient from '../utils/apiClient';
 
 const VerifyEmailPage = () => {
   const { token } = useParams(); // Grabs the token from the URL
@@ -17,7 +18,7 @@ const VerifyEmailPage = () => {
 
   const verifyIdentity = async () => {
     try {
-      const res = await fetch(`https://bizferbine-backend.onrender.com/api/auth/verify/${token}`);
+      const res = await apiClient.get(`/auth/verify/${token}`);
       const data = await res.json();
 
       if (res.ok) {
@@ -35,16 +36,15 @@ const VerifyEmailPage = () => {
 
   return (
     <div className="min-h-screen bg-[#020408] flex flex-col items-center justify-center relative overflow-hidden font-sans">
-      
+
       {/* Dynamic Security Glow based on status */}
-      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[120px] pointer-events-none transition-colors duration-700 ${
-        status === 'verifying' ? 'bg-blue-900/10' : 
-        status === 'success' ? 'bg-emerald-900/10' : 
-        'bg-rose-900/10'
-      }`}></div>
+      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[120px] pointer-events-none transition-colors duration-700 ${status === 'verifying' ? 'bg-blue-900/10' :
+          status === 'success' ? 'bg-emerald-900/10' :
+            'bg-rose-900/10'
+        }`}></div>
 
       <div className="relative z-10 w-full max-w-md bg-[#050810] border border-white/5 p-8 rounded-3xl shadow-2xl animate-in zoom-in-95 text-center">
-        
+
         {/* STATUS: VERIFYING */}
         {status === 'verifying' && (
           <div className="flex flex-col items-center">
@@ -64,7 +64,7 @@ const VerifyEmailPage = () => {
             </div>
             <h1 className="text-2xl font-black text-white tracking-widest uppercase mb-2">Node Verified</h1>
             <p className="text-sm text-emerald-400 mb-8">{message}</p>
-            
+
             <Link to="/login" className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,99,235,0.4)]">
               <KeyRound size={18} /> Access System Portal
             </Link>
@@ -79,7 +79,7 @@ const VerifyEmailPage = () => {
             </div>
             <h1 className="text-2xl font-black text-white tracking-widest uppercase mb-2">Verification Failed</h1>
             <p className="text-sm text-rose-400 mb-8">{message}</p>
-            
+
             <Link to="/login" className="w-full bg-black border border-white/10 hover:bg-white/5 text-white py-4 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2">
               Return to Login
             </Link>

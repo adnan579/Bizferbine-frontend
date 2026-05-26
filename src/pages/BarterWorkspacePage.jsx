@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, ArrowRightLeft, Send, CheckCircle2, PlayCircle, AlertOctagon, Clock, Star, X, Calendar, Video, Link as LinkIcon, Flag, Loader2 } from 'lucide-react';
+import apiClient from '../utils/apiClient';
 
 const BarterWorkspacePage = () => {
   const [workspaces, setWorkspaces] = useState([]);
@@ -21,7 +22,7 @@ const BarterWorkspacePage = () => {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [isReporting, setIsReporting] = useState(false);
-  
+
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
@@ -33,9 +34,7 @@ const BarterWorkspacePage = () => {
 
   const fetchWorkspaces = async () => {
     try {
-      const res = await fetch('https://bizferbine-backend.onrender.com/api/barter-workspace', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await apiClient.get('/barter-workspace');
       if (res.ok) {
         const data = await res.json();
         setWorkspaces(data);
@@ -62,9 +61,7 @@ const BarterWorkspacePage = () => {
     if (!message.trim() || !activeWorkspace) return;
 
     try {
-      const res = await fetch(`https://bizferbine-backend.onrender.com/api/barter-workspace/${activeWorkspace._id}/message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const res = await apiClient.post(`/barter-workspace/${activeWorkspace._id}/message`, {
         body: JSON.stringify({ text: message })
       });
       if (res.ok) {
@@ -77,9 +74,7 @@ const BarterWorkspacePage = () => {
   const handleUpdateStatus = async (newStatus) => {
     if (!window.confirm(`Update workspace status to ${newStatus}?`)) return;
     try {
-      const res = await fetch(`https://bizferbine-backend.onrender.com/api/barter-workspace/${activeWorkspace._id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const res = await apiClient.put(`/barter-workspace/${activeWorkspace._id}/status`, {
         body: JSON.stringify({ status: newStatus })
       });
       if (res.ok) fetchWorkspaces();
@@ -91,9 +86,7 @@ const BarterWorkspacePage = () => {
     const otherUser = activeWorkspace.initiator._id === loggedInUser.id ? activeWorkspace.partner : activeWorkspace.initiator;
 
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/profile/${otherUser._id}/review`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const response = await apiClient.post(`/profile/${otherUser._id}/review`, {
         body: JSON.stringify({ workspaceId: activeWorkspace._id, rating: reviewForm.rating, text: reviewForm.text })
       });
       const data = await response.json();
@@ -102,7 +95,7 @@ const BarterWorkspacePage = () => {
         setIsReviewOpen(false);
         setReviewForm({ rating: 5, text: '' });
       } else {
-        alert(data.message); 
+        alert(data.message);
       }
     } catch (err) { console.error(err); }
   };
@@ -110,15 +103,13 @@ const BarterWorkspacePage = () => {
   const handleScheduleSync = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/barter-workspace/${activeWorkspace._id}/schedule`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const response = await apiClient.post(`/barter-workspace/${activeWorkspace._id}/schedule`, {
         body: JSON.stringify(scheduleForm)
       });
       if (response.ok) {
         setIsScheduleOpen(false);
         setScheduleForm({ title: '', date: '', link: '' });
-        fetchWorkspaces(); 
+        fetchWorkspaces();
       } else {
         alert("Failed to schedule sync.");
       }
@@ -132,24 +123,22 @@ const BarterWorkspacePage = () => {
     e.preventDefault();
     setIsReporting(true);
     try {
-      const response = await fetch('https://bizferbine-backend.onrender.com/api/disputes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const response = await apiClient.post('/disputes', {
         body: JSON.stringify({
           reportedEntityId: activeWorkspace._id,
           module: 'SkillExchange', // Matches your enum!
           reason: reportReason
         })
       });
-      
+
       const data = await response.json();
       if (response.ok) {
         alert("Issue reported to the Admin Overseer. We will investigate immediately.");
         setIsReportOpen(false);
         setReportReason('');
-        
+
         // Optionally auto-update status to "Disputed"
-        handleUpdateStatus('Disputed'); 
+        handleUpdateStatus('Disputed');
       } else {
         alert(data.message || "Failed to submit report.");
       }
@@ -161,7 +150,7 @@ const BarterWorkspacePage = () => {
   };
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'Negotiating': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
       case 'In Progress': return 'text-blue-400 bg-blue-500/10 border-blue-500/30';
       case 'Completed': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
@@ -176,7 +165,7 @@ const BarterWorkspacePage = () => {
 
   return (
     <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-cyan-500/30 flex flex-col h-screen overflow-hidden">
-      
+
       <nav className="shrink-0 z-50 backdrop-blur-xl bg-[#050810]/70 border-b border-white/5 p-4 flex justify-between items-center">
         <div className="flex items-center gap-6">
           <Link to="/skill-exchange" className="p-2 text-gray-400 hover:text-cyan-400 transition bg-white/5 rounded-full">
@@ -201,7 +190,7 @@ const BarterWorkspacePage = () => {
             workspaces.map(ws => {
               const partnerNode = ws.initiator._id === loggedInUser.id ? ws.partner : ws.initiator;
               return (
-                <button 
+                <button
                   key={ws._id}
                   onClick={() => setActiveWorkspace(ws)}
                   className={`w-full p-5 flex flex-col text-left border-b border-white/5 hover:bg-white/5 transition relative ${activeWorkspace?._id === ws._id ? 'bg-cyan-500/10 border-l-2 border-l-cyan-500' : 'border-l-2 border-l-transparent'}`}
@@ -242,22 +231,22 @@ const BarterWorkspacePage = () => {
                 </div>
 
                 <div className="flex items-center gap-2 bg-black/50 p-1.5 rounded-xl border border-white/10 flex-wrap">
-                  
+
                   <button onClick={() => setIsScheduleOpen(true)} className="px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]">
-                    <Calendar size={14}/> Schedule Sync
+                    <Calendar size={14} /> Schedule Sync
                   </button>
 
                   <div className="w-px h-6 bg-white/10 mx-1"></div>
 
-                  <button onClick={() => handleUpdateStatus('Negotiating')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${activeWorkspace.status === 'Negotiating' ? 'bg-yellow-500/20 text-yellow-400' : 'text-gray-500 hover:text-yellow-400'}`}><Clock size={14}/> Negotiating</button>
-                  <button onClick={() => handleUpdateStatus('In Progress')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${activeWorkspace.status === 'In Progress' ? 'bg-blue-500/20 text-blue-400' : 'text-gray-500 hover:text-blue-400'}`}><PlayCircle size={14}/> In Progress</button>
-                  <button onClick={() => handleUpdateStatus('Completed')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${activeWorkspace.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-500 hover:text-emerald-400'}`}><CheckCircle2 size={14}/> Completed</button>
-                  
+                  <button onClick={() => handleUpdateStatus('Negotiating')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${activeWorkspace.status === 'Negotiating' ? 'bg-yellow-500/20 text-yellow-400' : 'text-gray-500 hover:text-yellow-400'}`}><Clock size={14} /> Negotiating</button>
+                  <button onClick={() => handleUpdateStatus('In Progress')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${activeWorkspace.status === 'In Progress' ? 'bg-blue-500/20 text-blue-400' : 'text-gray-500 hover:text-blue-400'}`}><PlayCircle size={14} /> In Progress</button>
+                  <button onClick={() => handleUpdateStatus('Completed')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${activeWorkspace.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-500 hover:text-emerald-400'}`}><CheckCircle2 size={14} /> Completed</button>
+
                   <div className="w-px h-6 bg-white/10 mx-1"></div>
 
                   {/* NEW: REPORT ISSUE BUTTON */}
                   <button onClick={() => setIsReportOpen(true)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${activeWorkspace.status === 'Disputed' ? 'bg-red-500/20 text-red-400' : 'text-rose-500/70 hover:text-rose-400 hover:bg-rose-500/10'}`}>
-                    <Flag size={14}/> Report Issue
+                    <Flag size={14} /> Report Issue
                   </button>
 
                 </div>
@@ -265,7 +254,7 @@ const BarterWorkspacePage = () => {
 
               {/* CHAT FEED */}
               <div className="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth flex flex-col">
-                
+
                 {activeWorkspace.status === 'Completed' && (
                   <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-6 text-center animate-in fade-in slide-in-from-top-4 mb-4">
                     <CheckCircle2 size={32} className="mx-auto text-emerald-400 mb-3" />
@@ -279,7 +268,7 @@ const BarterWorkspacePage = () => {
 
                 {activeWorkspace.messages.map((msg) => {
                   const isMe = msg.sender === loggedInUser.id;
-                  
+
                   if (msg.type === 'System_Meeting' && msg.meetingDetails) {
                     return (
                       <div key={msg._id} className="w-full flex justify-center my-4 animate-in fade-in zoom-in-95">
@@ -324,8 +313,8 @@ const BarterWorkspacePage = () => {
               {/* INPUT */}
               <div className="p-4 bg-[#0a0f1c]/90 border-t border-white/5 backdrop-blur-xl shrink-0">
                 <form onSubmit={handleSendMessage} className="flex gap-3">
-                  <input 
-                    type="text" required placeholder="Coordinate the exchange..." 
+                  <input
+                    type="text" required placeholder="Coordinate the exchange..."
                     value={message} onChange={(e) => setMessage(e.target.value)}
                     disabled={activeWorkspace.status === 'Completed'}
                     className="flex-1 bg-black border border-white/10 rounded-full px-6 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition disabled:opacity-50"
@@ -348,23 +337,23 @@ const BarterWorkspacePage = () => {
               <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
                 <Calendar className="text-blue-400" /> SCHEDULE SYNC
               </h2>
-              <button onClick={() => setIsScheduleOpen(false)} className="text-gray-400 hover:text-white"><X size={20}/></button>
+              <button onClick={() => setIsScheduleOpen(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
             </div>
-            
+
             <form onSubmit={handleScheduleSync} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest ml-1">Meeting Agenda</label>
-                <input required type="text" value={scheduleForm.title} onChange={(e) => setScheduleForm({...scheduleForm, title: e.target.value})} placeholder="e.g. Design Architecture Review" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none transition" />
+                <input required type="text" value={scheduleForm.title} onChange={(e) => setScheduleForm({ ...scheduleForm, title: e.target.value })} placeholder="e.g. Design Architecture Review" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none transition" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest ml-1">Date & Time</label>
-                <input required type="datetime-local" value={scheduleForm.date} onChange={(e) => setScheduleForm({...scheduleForm, date: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:border-blue-500 outline-none transition [color-scheme:dark]" />
+                <input required type="datetime-local" value={scheduleForm.date} onChange={(e) => setScheduleForm({ ...scheduleForm, date: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:border-blue-500 outline-none transition [color-scheme:dark]" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest ml-1">Video Link (Zoom/Meet/Teams)</label>
                 <div className="relative">
                   <LinkIcon size={16} className="absolute left-4 top-3.5 text-gray-500" />
-                  <input required type="url" value={scheduleForm.link} onChange={(e) => setScheduleForm({...scheduleForm, link: e.target.value})} placeholder="https://zoom.us/j/..." className="w-full bg-black border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-blue-400 font-mono focus:border-blue-500 outline-none transition" />
+                  <input required type="url" value={scheduleForm.link} onChange={(e) => setScheduleForm({ ...scheduleForm, link: e.target.value })} placeholder="https://zoom.us/j/..." className="w-full bg-black border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-blue-400 font-mono focus:border-blue-500 outline-none transition" />
                 </div>
               </div>
               <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.4)] mt-4">
@@ -383,20 +372,20 @@ const BarterWorkspacePage = () => {
               <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2 text-rose-400">
                 <Flag size={20} /> REPORT AN ISSUE
               </h2>
-              <button onClick={() => setIsReportOpen(false)} className="text-gray-400 hover:text-white"><X size={20}/></button>
+              <button onClick={() => setIsReportOpen(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
             </div>
-            
+
             <p className="text-sm text-gray-400 mb-6">If your trade partner is unresponsive, not delivering agreed work, or violating terms, log a dispute. Our Admin Overseers will review the workspace communications.</p>
 
             <form onSubmit={handleReportIssue} className="space-y-6">
               <div>
                 <label className="text-[10px] font-mono text-rose-400 uppercase tracking-widest mb-2 block">Reason for Dispute</label>
-                <textarea 
-                  required rows="4" 
-                  value={reportReason} 
-                  onChange={(e) => setReportReason(e.target.value)} 
-                  placeholder="Clearly explain what happened. Admins will review the chat logs to verify your claims..." 
-                  className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-rose-500 outline-none resize-none transition" 
+                <textarea
+                  required rows="4"
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  placeholder="Clearly explain what happened. Admins will review the chat logs to verify your claims..."
+                  className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-rose-500 outline-none resize-none transition"
                 />
               </div>
 
@@ -417,15 +406,15 @@ const BarterWorkspacePage = () => {
           <div className="w-full max-w-lg bg-[#0a0f1c] border border-emerald-500/30 rounded-3xl shadow-[0_0_50px_rgba(16,185,129,0.15)] p-8 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-black text-white tracking-tight">EVALUATE TRADE</h2>
-              <button onClick={() => setIsReviewOpen(false)} className="text-gray-400 hover:text-white"><X size={20}/></button>
+              <button onClick={() => setIsReviewOpen(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
             </div>
-            
+
             <form onSubmit={handleSubmitReview} className="space-y-6">
               <div className="flex flex-col items-center gap-4 bg-black/30 p-6 rounded-2xl border border-white/5">
                 <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Rate @{otherUser?.username || otherUser?.name}</p>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <button key={star} type="button" onClick={() => setReviewForm({...reviewForm, rating: star})} className={`transition-transform hover:scale-110 ${reviewForm.rating >= star ? 'text-yellow-400' : 'text-gray-700'}`}>
+                    <button key={star} type="button" onClick={() => setReviewForm({ ...reviewForm, rating: star })} className={`transition-transform hover:scale-110 ${reviewForm.rating >= star ? 'text-yellow-400' : 'text-gray-700'}`}>
                       <Star size={36} className={reviewForm.rating >= star ? 'fill-yellow-400' : ''} />
                     </button>
                   ))}
@@ -434,7 +423,7 @@ const BarterWorkspacePage = () => {
 
               <div>
                 <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest mb-2 block">Public Feedback</label>
-                <textarea required rows="3" value={reviewForm.text} onChange={(e) => setReviewForm({...reviewForm, text: e.target.value})} placeholder="How was the experience? Was the work delivered on time?" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none resize-none transition" />
+                <textarea required rows="3" value={reviewForm.text} onChange={(e) => setReviewForm({ ...reviewForm, text: e.target.value })} placeholder="How was the experience? Was the work delivered on time?" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none resize-none transition" />
               </div>
 
               <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-black py-4 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.4)]">

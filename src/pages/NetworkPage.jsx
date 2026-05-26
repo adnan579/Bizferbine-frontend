@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Network, UserCheck, UserX, Clock, Users } from 'lucide-react';
+import apiClient from '../utils/apiClient';
 
 const NetworkPage = () => {
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -18,14 +19,12 @@ const NetworkPage = () => {
 
   const fetchData = async () => {
     try {
-      const headers = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
-      
       // Fetch Pending Requests
-      const pendingRes = await fetch('https://bizferbine-backend.onrender.com/api/network/pending', { headers });
+      const pendingRes = await apiClient.get('/network/pending');
       if (pendingRes.ok) setPendingRequests(await pendingRes.json());
 
       // Fetch Accepted Connections
-      const connRes = await fetch('https://bizferbine-backend.onrender.com/api/network/connections', { headers });
+      const connRes = await apiClient.get('/network/connections');
       if (connRes.ok) setConnections(await connRes.json());
       
     } catch (err) { console.error("Network fetch error", err); } 
@@ -39,12 +38,7 @@ const NetworkPage = () => {
 
   const handleRequest = async (requestId, status) => {
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/network/connect/${requestId}/status`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
-        },
+      const response = await apiClient.put(`/network/connect/${requestId}/status`, {
         body: JSON.stringify({ status }) // 'Accepted' or 'Declined'
       });
 

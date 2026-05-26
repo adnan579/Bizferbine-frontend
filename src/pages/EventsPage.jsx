@@ -2,19 +2,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Ticket, Calendar, MapPin, Users, DollarSign, Plus, CheckCircle2, ShieldAlert, Loader2, AlertCircle, Settings, Download, Megaphone, CalendarDays } from 'lucide-react';
+import apiClient from '../utils/apiClient';
 
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Modal State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createError, setCreateError] = useState('');
-  
+
   const [formData, setFormData] = useState({
-    title: '', description: '', type: 'Online', locationOrLink: '', 
-    date: '', ticketPrice: 0, maxCapacity: 100, 
+    title: '', description: '', type: 'Online', locationOrLink: '',
+    date: '', ticketPrice: 0, maxCapacity: 100,
     acceptsSponsors: false, sponsorshipPrice: 0
   });
 
@@ -36,13 +37,11 @@ const EventsPage = () => {
     try {
       // Note: Your GET /api/events backend route doesn't strictly require auth, 
       // but we pass the token anyway for future-proofing.
-      const response = await fetch('https://bizferbine-backend.onrender.com/api/events', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await apiClient.get('/events');
       if (response.ok) {
         setEvents(await response.json());
       }
-    } catch (err) { console.error("Failed to fetch events", err); } 
+    } catch (err) { console.error("Failed to fetch events", err); }
     finally { setLoading(false); }
   };
 
@@ -58,14 +57,12 @@ const EventsPage = () => {
     setCreateError('');
 
     try {
-      const response = await fetch('https://bizferbine-backend.onrender.com/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const response = await apiClient.post('/events', {
         body: JSON.stringify(formData)
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         setIsCreateOpen(false);
         setFormData({ title: '', description: '', type: 'Online', locationOrLink: '', date: '', ticketPrice: 0, maxCapacity: 100, acceptsSponsors: false, sponsorshipPrice: 0 });
@@ -73,7 +70,7 @@ const EventsPage = () => {
       } else {
         setCreateError(data.message || 'Failed to create event.');
       }
-    } catch (err) { setCreateError('Server Connection Error.'); } 
+    } catch (err) { setCreateError('Server Connection Error.'); }
     finally { setIsSubmitting(false); }
   };
 
@@ -84,9 +81,7 @@ const EventsPage = () => {
       if (!confirmPay) return;
     }
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/events/${event._id}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const response = await apiClient.post(`/events/${event._id}/register`, {
         body: JSON.stringify({ paymentSuccess: true }) // Simulating successful Razorpay gateway
       });
       const data = await response.json();
@@ -106,9 +101,7 @@ const EventsPage = () => {
       if (!confirmPay) return;
     }
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/events/${event._id}/sponsor`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const response = await apiClient.post(`/events/${event._id}/sponsor`, {
         body: JSON.stringify({ paymentSuccess: true }) // Simulating successful Razorpay gateway
       });
       const data = await response.json();
@@ -120,9 +113,7 @@ const EventsPage = () => {
   // OPEN COMMAND CENTER
   const handleOpenCommandCenter = async (eventId) => {
     try {
-      const response = await fetch(`https://bizferbine-backend.onrender.com/api/events/${eventId}/manage`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await apiClient.get(`/events/${eventId}/manage`);
       if (response.ok) {
         setManageData(await response.json());
         setIsManageOpen(true);
@@ -144,7 +135,7 @@ const EventsPage = () => {
 
   return (
     <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-blue-500/30 pb-20 relative overflow-hidden">
-      
+
       {/* Background Glows */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-600/10 rounded-full blur-[150px] pointer-events-none"></div>
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none"></div>
@@ -182,7 +173,7 @@ const EventsPage = () => {
 
               return (
                 <div key={event._id} className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-6 hover:border-emerald-500/30 transition-all duration-300 group flex flex-col relative overflow-hidden">
-                  
+
                   {/* Event Type Badge */}
                   <div className="absolute top-0 right-0 bg-white/5 border-b border-l border-white/10 px-4 py-1.5 rounded-bl-xl text-[10px] font-mono uppercase tracking-widest text-emerald-400">
                     {event.type}
@@ -190,7 +181,7 @@ const EventsPage = () => {
 
                   <h2 className="text-xl font-bold text-white mb-2 pr-16 leading-tight">{event.title}</h2>
                   <p className="text-sm text-gray-400 mb-6 line-clamp-2">{event.description}</p>
-                  
+
                   <div className="space-y-3 mb-8">
                     <div className="flex items-center gap-3 text-xs text-gray-300 font-mono">
                       <Calendar size={14} className="text-blue-400" />
@@ -208,7 +199,7 @@ const EventsPage = () => {
 
                   {/* Actions Footer */}
                   <div className="mt-auto pt-4 border-t border-white/5 flex flex-col gap-2">
-                    
+
                     {/* Organizer Manage Button */}
                     {isOrganizer ? (
                       <button onClick={() => handleOpenCommandCenter(event._id)} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.4)]">
@@ -220,7 +211,7 @@ const EventsPage = () => {
                         {isRegistered ? (
                           <div className="flex gap-2">
                             <button disabled className="flex-1 bg-blue-500/10 text-blue-400 border border-blue-500/30 py-3 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1"><CheckCircle2 size={14} /> Registered</button>
-                            <a href={generateCalendarLink(event)} target="_blank" rel="noreferrer" className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 py-3 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition"><CalendarDays size={14}/> Sync Cal</a>
+                            <a href={generateCalendarLink(event)} target="_blank" rel="noreferrer" className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 py-3 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition"><CalendarDays size={14} /> Sync Cal</a>
                           </div>
                         ) : isFull ? (
                           <button disabled className="w-full bg-red-500/10 text-red-400 border border-red-500/30 py-3 rounded-xl text-xs font-bold uppercase tracking-widest">Sold Out</button>
@@ -256,7 +247,7 @@ const EventsPage = () => {
         <div className="fixed inset-0 z-[100] flex justify-center items-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-2xl bg-[#0a0f1c] border border-white/10 rounded-3xl shadow-2xl p-8 overflow-y-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
             <h2 className="text-xl font-black text-white tracking-tight mb-6">DEPLOY EVENT VECTOR</h2>
-            
+
             {createError && (
               <div className="mb-6 bg-red-500/10 border border-red-500/50 rounded-xl p-4 flex items-start gap-3 text-sm text-red-200">
                 <AlertCircle size={20} className="text-red-400 shrink-0" /> {createError}
@@ -266,48 +257,48 @@ const EventsPage = () => {
             <form onSubmit={handleCreateEvent} className="space-y-5">
               <div className="space-y-2">
                 <label className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">Event Title</label>
-                <input required type="text" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition" />
+                <input required type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition" />
               </div>
 
               <div className="space-y-2">
                 <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Description</label>
-                <textarea required rows="3" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none resize-none transition" />
+                <textarea required rows="3" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none resize-none transition" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Format</label>
-                  <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition">
+                  <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition">
                     <option value="Online">Online / Virtual</option>
                     <option value="Offline">Offline / Physical</option>
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Location / Meet Link</label>
-                  <input required type="text" value={formData.locationOrLink} onChange={(e) => setFormData({...formData, locationOrLink: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition" />
+                  <input required type="text" value={formData.locationOrLink} onChange={(e) => setFormData({ ...formData, locationOrLink: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Date & Time</label>
-                  <input required type="datetime-local" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:border-emerald-500 outline-none transition [color-scheme:dark]" />
+                  <input required type="datetime-local" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:border-emerald-500 outline-none transition [color-scheme:dark]" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Ticket ($)</label>
-                    <input type="number" min="0" value={formData.ticketPrice} onChange={(e) => setFormData({...formData, ticketPrice: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition font-mono" />
+                    <input type="number" min="0" value={formData.ticketPrice} onChange={(e) => setFormData({ ...formData, ticketPrice: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition font-mono" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Capacity</label>
-                    <input required type="number" min="1" value={formData.maxCapacity} onChange={(e) => setFormData({...formData, maxCapacity: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition font-mono" />
+                    <input required type="number" min="1" value={formData.maxCapacity} onChange={(e) => setFormData({ ...formData, maxCapacity: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition font-mono" />
                   </div>
                 </div>
               </div>
 
               <div className="p-4 border border-purple-500/30 bg-purple-900/10 rounded-2xl space-y-4 mt-4">
                 <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" checked={formData.acceptsSponsors} onChange={(e) => setFormData({...formData, acceptsSponsors: e.target.checked})} className="w-5 h-5 rounded border-gray-600 bg-black checked:bg-purple-600 transition" />
+                  <input type="checkbox" checked={formData.acceptsSponsors} onChange={(e) => setFormData({ ...formData, acceptsSponsors: e.target.checked })} className="w-5 h-5 rounded border-gray-600 bg-black checked:bg-purple-600 transition" />
                   <span className="text-sm font-bold text-purple-300">Accept Corporate Sponsorships</span>
                 </label>
                 {formData.acceptsSponsors && (
@@ -315,7 +306,7 @@ const EventsPage = () => {
                     <label className="text-[10px] font-mono text-purple-400 uppercase tracking-widest">Sponsorship Tier Price ($)</label>
                     <div className="relative">
                       <DollarSign size={16} className="absolute left-4 top-3 text-gray-500" />
-                      <input type="number" min="0" value={formData.sponsorshipPrice} onChange={(e) => setFormData({...formData, sponsorshipPrice: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:border-purple-500 outline-none transition font-mono" />
+                      <input type="number" min="0" value={formData.sponsorshipPrice} onChange={(e) => setFormData({ ...formData, sponsorshipPrice: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:border-purple-500 outline-none transition font-mono" />
                     </div>
                   </div>
                 )}
@@ -360,20 +351,19 @@ const EventsPage = () => {
 
             {/* Broadcast */}
             <div className="bg-black/50 border border-white/5 rounded-2xl p-5 mb-6">
-              <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><Megaphone size={16} className="text-yellow-400"/> Network Broadcast</h3>
+              <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><Megaphone size={16} className="text-yellow-400" /> Network Broadcast</h3>
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 setIsBroadcasting(true);
                 try {
-                  await fetch(`https://bizferbine-backend.onrender.com/api/events/${manageData.event._id}/broadcast`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                  await apiClient.post(`/events/${manageData.event._id}/broadcast`, {
                     body: JSON.stringify({ message: broadcastMessage })
                   });
                   alert('Message transmitted to all attendees!'); setBroadcastMessage('');
                 } catch (err) { console.error(err); } finally { setIsBroadcasting(false); }
               }} className="flex gap-2">
                 <input required type="text" placeholder="Send secure update to all attendees..." value={broadcastMessage} onChange={(e) => setBroadcastMessage(e.target.value)} className="flex-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-yellow-500 outline-none transition" />
-                <button disabled={isBroadcasting} type="submit" className="bg-yellow-600 hover:bg-yellow-500 text-black px-6 rounded-xl text-sm font-bold transition flex items-center gap-2">{isBroadcasting ? <Loader2 className="animate-spin" size={16}/> : 'Transmit'}</button>
+                <button disabled={isBroadcasting} type="submit" className="bg-yellow-600 hover:bg-yellow-500 text-black px-6 rounded-xl text-sm font-bold transition flex items-center gap-2">{isBroadcasting ? <Loader2 className="animate-spin" size={16} /> : 'Transmit'}</button>
               </form>
             </div>
 
@@ -385,7 +375,7 @@ const EventsPage = () => {
                 <div key={user._id} className="bg-black border border-white/5 p-3 rounded-xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center font-bold text-blue-400 text-xs overflow-hidden">
-                      {user.profilePictureUrl ? <img src={user.profilePictureUrl.startsWith('http') ? user.profilePictureUrl : `https://bizferbine-backend.onrender.com/${user.profilePictureUrl}`} className="w-full h-full object-cover"/> : user.name.charAt(0)}
+                      {user.profilePictureUrl ? <img src={user.profilePictureUrl.startsWith('http') ? user.profilePictureUrl : `https://bizferbine-backend.onrender.com/${user.profilePictureUrl}`} className="w-full h-full object-cover" /> : user.name.charAt(0)}
                     </div>
                     <div><p className="text-sm font-bold text-white leading-none">{user.name}</p><p className="text-[10px] text-gray-500 font-mono mt-1">{user.role}</p></div>
                   </div>

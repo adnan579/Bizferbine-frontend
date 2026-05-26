@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Bell, Zap, Briefcase, UserPlus, MessageSquare, Award, CheckCheck, Loader2 } from 'lucide-react';
+import apiClient from '../utils/apiClient';
 
 const NotificationCenter = ({ isOpen, onClose, onUnreadUpdate }) => {
   const [alerts, setAlerts] = useState([]);
@@ -10,9 +11,7 @@ const NotificationCenter = ({ isOpen, onClose, onUnreadUpdate }) => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await fetch('https://bizferbine-backend.onrender.com/api/notifications', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await apiClient.get('/notifications');
       if (response.ok) {
         const data = await response.json();
         setAlerts(data.alerts);
@@ -36,10 +35,7 @@ const NotificationCenter = ({ isOpen, onClose, onUnreadUpdate }) => {
   const handleMarkAsRead = async (notification) => {
     if (!notification.isRead) {
       try {
-        await fetch(`https://bizferbine-backend.onrender.com/api/notifications/${notification._id}/read`, {
-          method: 'PUT',
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
+        await apiClient.put(`/notifications/${notification._id}/read`);
         // Update local state instantly
         setAlerts(alerts.map(a => a._id === notification._id ? { ...a, isRead: true } : a));
       } catch (err) {
@@ -88,7 +84,7 @@ const NotificationCenter = ({ isOpen, onClose, onUnreadUpdate }) => {
   return (
     <div className="fixed inset-0 z-[100] flex justify-end bg-black/60 backdrop-blur-sm">
       <div className="w-full max-w-md bg-[#0a0f1c] border-l border-white/10 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-        
+
         {/* HEADER */}
         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-[#050810]/50 shrink-0">
           <div className="flex items-center gap-3">
@@ -118,19 +114,18 @@ const NotificationCenter = ({ isOpen, onClose, onUnreadUpdate }) => {
             alerts.map((alert) => {
               const ui = getAlertUI(alert.type);
               return (
-                <button 
+                <button
                   key={alert._id}
                   onClick={() => handleMarkAsRead(alert)}
-                  className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 group flex items-start gap-4 ${
-                    alert.isRead 
-                      ? 'bg-white/5 border-white/5 opacity-60 hover:opacity-100' 
+                  className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 group flex items-start gap-4 ${alert.isRead
+                      ? 'bg-white/5 border-white/5 opacity-60 hover:opacity-100'
                       : 'bg-black border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.02)] hover:border-blue-500/40'
-                  }`}
+                    }`}
                 >
                   {/* Sender Avatar */}
                   <div className="w-10 h-10 rounded-full bg-[#050810] border border-white/10 shrink-0 overflow-hidden flex items-center justify-center font-bold text-white relative">
                     {alert.sender?.profilePictureUrl ? (
-                  <img src={alert.sender.profilePictureUrl.startsWith('http') ? alert.sender.profilePictureUrl : `https://bizferbine-backend.onrender.com/${alert.sender.profilePictureUrl}`} className="w-full h-full object-cover" alt="Sender" />
+                      <img src={alert.sender.profilePictureUrl.startsWith('http') ? alert.sender.profilePictureUrl : `https://bizferbine-backend.onrender.com/${alert.sender.profilePictureUrl}`} className="w-full h-full object-cover" alt="Sender" />
                     ) : (
                       alert.sender?.name?.charAt(0).toUpperCase() || 'S'
                     )}
