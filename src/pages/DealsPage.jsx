@@ -1,7 +1,8 @@
 // src/pages/DealsPage.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Briefcase, ChevronLeft, ShieldCheck, Send, Plus, DollarSign, CheckCircle2, XCircle, Clock, FileText, Trash2, Share2, Paperclip, AlertCircle } from 'lucide-react';
+import { Briefcase, ChevronLeft, ShieldCheck, Send, Plus, DollarSign, CheckCircle2, XCircle, Clock, FileText, Trash2, Share2, Paperclip, AlertCircle, ShieldAlert } from 'lucide-react';
+import { useAutonomicGovernor } from '../hooks/useAutonomicGovernor';
 
 const DealsPage = () => {
   const [deals, setDeals] = useState([]);
@@ -15,6 +16,8 @@ const DealsPage = () => {
   const [proposalMsg, setProposalMsg] = useState('');
   const [proposalAmt, setProposalAmt] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+
+  const { isCompromised, stabilityScore } = useAutonomicGovernor();
 
   const navigate = useNavigate();
 
@@ -221,7 +224,7 @@ const DealsPage = () => {
                 <div className="flex items-center gap-2">
                   {(activeDeal.status === 'Open' || activeDeal.status === 'Negotiating') && (
                     <>
-                      <button onClick={() => handleUpdateStatus('Accepted')} className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1"><CheckCircle2 size={14} /> Accept</button>
+                      <button disabled={isCompromised} onClick={() => handleUpdateStatus('Accepted')} className={`bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${isCompromised ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}><CheckCircle2 size={14} /> Accept</button>
                       <button onClick={() => handleUpdateStatus('Closed')} className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1"><XCircle size={14} /> Close</button>
                     </>
                   )}
@@ -233,6 +236,16 @@ const DealsPage = () => {
 
               {/* NEGOTIATION FEED */}
               <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth z-10">
+                {isCompromised && (
+                  <div className="bg-rose-900/20 border border-rose-500/50 p-4 rounded-xl flex items-start gap-3 shadow-[0_0_20px_rgba(225,29,72,0.15)] animate-in fade-in">
+                    <ShieldAlert className="text-rose-500 shrink-0 mt-0.5" size={20} />
+                    <div>
+                      <h4 className="text-rose-400 font-bold text-sm uppercase tracking-widest font-mono mb-1">Autonomic Lockout Engaged</h4>
+                      <p className="text-rose-300/80 text-xs leading-relaxed">System telemetry indicates your cognitive stability score is critically low ({stabilityScore}/100). To protect your network standing and financial assets, binding contract executions have been temporarily disabled. Please utilize the Aegis Protocol in the Wellness Corner to recalibrate.</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="bg-black/50 border border-white/5 p-5 rounded-2xl max-w-2xl text-sm text-gray-300">
                   <div className="flex items-center gap-2 mb-2 text-blue-400 font-mono text-[10px] uppercase tracking-widest"><FileText size={12} /> Initial Deal Parameters</div>
                   {activeDeal.description}
