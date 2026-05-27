@@ -165,7 +165,7 @@ const EventsPage = () => {
   // --- THE EVENT OPERATING SYSTEM VIEW ---
   if (activeOsEvent) {
     // Compute Fake Opportunity Match for Demo Mission Brief
-    const simulatedMatches = osData.attendees.filter(a => a.user?._id !== loggedInUser?.id).slice(0, 3);
+    const simulatedMatches = userIntent?.briefData?.highValueConnections || osData.attendees.filter(a => a.user?._id !== loggedInUser?.id).slice(0, 3);
     const matchScore = userIntent ? Math.floor(Math.random() * 20) + 75 : 0; // 75-95 random score
 
     return (
@@ -317,51 +317,67 @@ const EventsPage = () => {
                         <p className="text-gray-400 text-sm font-mono uppercase tracking-widest max-w-md mx-auto leading-relaxed">Initialize your Intent Vector on the left to compile your personalized Mission Brief and isolate target connections.</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Opportunity Score Graphic */}
-                        <div className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-8 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
-                          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-cyan-500"></div>
-                          <h3 className="text-xs font-mono text-gray-400 uppercase tracking-widest mb-8">Opportunity Match Score</h3>
-
-                          <div className="relative w-48 h-48 flex items-center justify-center shrink-0 mb-6">
-                            <svg className="w-full h-full transform -rotate-90">
-                              <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
-                              <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="552" strokeDashoffset={552 - (552 * matchScore) / 100} className="text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)] transition-all duration-1000" />
-                            </svg>
-                            <div className="absolute flex flex-col items-center justify-center">
-                              <span className="text-5xl font-black text-white">{matchScore}</span>
-                              <span className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest mt-1">/ 100</span>
-                            </div>
-                          </div>
-                          <p className="text-xs text-center text-gray-500 leading-relaxed">System has successfully isolated high-value targets based on your stated directives.</p>
+                      <>
+                        <div className="grid grid-cols-3 gap-4 mb-6 bg-black/40 border border-cyan-500/20 rounded-2xl p-4 font-mono text-xs">
+                          <div className="text-center"><p className="text-cyan-400 font-bold text-lg">⚡ Live Pulse</p><p className="text-gray-400 mt-1">Founders Active</p></div>
+                          <div className="text-center"><p className="text-emerald-400 font-bold text-lg">⚙️ Workspaces</p><p className="text-gray-400 mt-1">Spawned Execution Nodes</p></div>
+                          <div className="text-center"><p className="text-purple-400 font-bold text-lg">🔥 Trends</p><p className="text-gray-400 mt-1">AI Projects Running</p></div>
                         </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                          {/* Opportunity Score Graphic */}
+                          <div className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-8 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-cyan-500"></div>
+                            <h3 className="text-xs font-mono text-gray-400 uppercase tracking-widest mb-8">Opportunity Match Score</h3>
 
-                        {/* Matching Profiles */}
-                        <div className="lg:col-span-2 space-y-4">
-                          <h3 className="text-lg font-black text-white mb-2 flex items-center gap-2"><Users className="text-blue-400" /> High-Value Target Clusters</h3>
-                          {simulatedMatches.length === 0 ? (
-                            <div className="p-6 bg-black/40 border border-white/5 rounded-2xl text-center text-xs font-mono text-gray-500 uppercase">Awaiting network nodes to populate matrix.</div>
-                          ) : (
-                            simulatedMatches.map((match, i) => (
-                              <div key={i} className="bg-gradient-to-r from-[#0a0f1c] to-black border border-white/10 p-5 rounded-2xl flex items-center justify-between gap-4 hover:border-blue-500/30 transition group">
-                                <div className="flex items-center gap-4">
-                                  <div className="w-12 h-12 rounded-xl bg-blue-900/30 flex items-center justify-center font-black text-blue-400 text-lg border border-blue-500/20 group-hover:scale-105 transition">
-                                    {match.user?.name?.charAt(0)}
-                                  </div>
-                                  <div>
-                                    <h4 className="text-sm font-bold text-white leading-tight">{match.user?.name}</h4>
-                                    <p className="text-[10px] text-blue-400 font-mono uppercase tracking-widest mb-1">{match.user?.role}</p>
-                                    <p className="text-xs text-gray-400 line-clamp-1">{match.user?.headline || 'Optimized for target directive'}</p>
-                                  </div>
-                                </div>
-                                <div className="text-right shrink-0">
-                                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">99% Match</span>
-                                </div>
+                            <div className="relative w-48 h-48 flex items-center justify-center shrink-0 mb-6">
+                              <svg className="w-full h-full transform -rotate-90">
+                                <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+                                <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="552" strokeDashoffset={552 - (552 * matchScore) / 100} className="text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)] transition-all duration-1000" />
+                              </svg>
+                              <div className="absolute flex flex-col items-center justify-center">
+                                <span className="text-5xl font-black text-white">{matchScore}</span>
+                                <span className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest mt-1">/ 100</span>
                               </div>
-                            ))
-                          )}
+                            </div>
+                            <p className="text-xs text-center text-gray-500 leading-relaxed">System has successfully isolated high-value targets based on your stated directives.</p>
+                          </div>
+
+                          {/* Matching Profiles */}
+                          <div className="lg:col-span-2 space-y-4">
+                            <h3 className="text-lg font-black text-white mb-2 flex items-center gap-2"><Users className="text-blue-400" /> High-Value Target Clusters</h3>
+                            {simulatedMatches.length === 0 ? (
+                              <div className="p-6 bg-black/40 border border-white/5 rounded-2xl text-center text-xs font-mono text-gray-500 uppercase">Awaiting network nodes to populate matrix.</div>
+                            ) : (
+                              simulatedMatches.map((match, i) => (
+                                <div key={i} className="bg-gradient-to-r from-[#0a0f1c] to-black border border-white/10 p-5 rounded-2xl flex items-center justify-between gap-4 hover:border-blue-500/30 transition group">
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-blue-900/30 flex items-center justify-center font-black text-blue-400 text-lg border border-blue-500/20 group-hover:scale-105 transition">
+                                      {match.user?.name?.charAt(0)}
+                                    </div>
+                                    <div>
+                                      <h4 className="text-sm font-bold text-white leading-tight">{match.user?.name}</h4>
+                                      <p className="text-[10px] text-blue-400 font-mono uppercase tracking-widest mb-1">{match.user?.role}</p>
+                                      <p className="text-xs text-gray-400 line-clamp-1">{match.user?.headline || 'Optimized for target directive'}</p>
+                                      {match.matchReasons && match.matchReasons.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-3">
+                                          {match.matchReasons.map((reason, idx) => (
+                                            <span key={idx} className="border border-cyan-500/10 bg-cyan-500/5 text-cyan-300 font-mono text-[10px] py-1 px-2.5 rounded-md">
+                                              {reason}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">{match.opportunityScore || 99}% Match</span>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      </>
                     )}
                   </>
                 )}
