@@ -4,6 +4,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Ticket, Calendar, MapPin, Users, DollarSign, Plus, CheckCircle2, ShieldAlert, Loader2, AlertCircle, Settings, Download, Megaphone, CalendarDays, Cpu, Network, Target, Radar, Briefcase, Zap, Layers, PlayCircle, MessageSquare, Clock } from 'lucide-react';
 import apiClient from '../utils/apiClient';
 
+// --- FALLBACK MOCK ICON FOR THE BUTTONS ---
+const Crosshair = ({ className }) => <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="22" y1="12" x2="18" y2="12" /><line x1="6" y1="12" x2="2" y2="12" /><line x1="12" y1="6" x2="12" y2="2" /><line x1="12" y1="22" x2="12" y2="18" /></svg>;
+
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -105,13 +108,13 @@ const EventsPage = () => {
     e.preventDefault();
     setIsIntentSubmitting(true);
     try {
-      const res = await apiClient.post(`/events/${activeOsEvent._id}/register-intent`, {
+      const res = await apiClient.post(`/events/${activeOsEvent?._id}/register-intent`, {
         body: JSON.stringify(intentForm)
       });
-      const data = await response.json();
+      const data = await res.json();
       if (res.ok) {
         setUserIntent(data.registration);
-        fetchOperatingSystem(activeOsEvent._id);
+        fetchOperatingSystem(activeOsEvent?._id);
         fetchEvents();
       } else {
         alert(data.message);
@@ -185,8 +188,8 @@ const EventsPage = () => {
 
           {/* LEFT COMPONENT: THE INTENT CAPTURE SYSTEM */}
           <aside className="w-full md:w-1/3 lg:w-1/4 border-r border-white/5 bg-[#0a0f1c]/80 overflow-y-auto z-10 flex flex-col p-6">
-            <h2 className="text-2xl font-black text-white mb-2 leading-tight">{activeOsEvent.title}</h2>
-            <p className="text-xs text-emerald-400 font-mono tracking-widest uppercase mb-6 flex items-center gap-2"><MapPin size={12} /> {activeOsEvent.locationOrLink}</p>
+            <h2 className="text-2xl font-black text-white mb-2 leading-tight">{activeOsEvent?.title}</h2>
+            <p className="text-xs text-emerald-400 font-mono tracking-widest uppercase mb-6 flex items-center gap-2"><MapPin size={12} /> {activeOsEvent?.locationOrLink}</p>
 
             {isOsLoading ? (
               <div className="flex-1 flex items-center justify-center text-emerald-400 animate-pulse font-mono text-xs uppercase tracking-widest"><Loader2 className="animate-spin mr-2" /> Syncing Hub</div>
@@ -304,59 +307,63 @@ const EventsPage = () => {
             {/* TAB 2: MISSION BRIEF */}
             {osTab === 'brief' && (
               <div className="animate-in fade-in max-w-5xl">
-                {!userIntent ? (
-                  <div className="text-center py-32 border border-dashed border-cyan-500/30 rounded-3xl bg-cyan-900/5 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.05)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
-                    <Radar size={48} className="mx-auto text-cyan-600 mb-6 animate-spin-slow" />
-                    <h3 className="text-xl font-black text-white mb-2">Algorithmic Brief Offline</h3>
-                    <p className="text-gray-400 text-sm font-mono uppercase tracking-widest max-w-md mx-auto leading-relaxed">Initialize your Intent Vector on the left to compile your personalized Mission Brief and isolate target connections.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Opportunity Score Graphic */}
-                    <div className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-8 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
-                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-cyan-500"></div>
-                      <h3 className="text-xs font-mono text-gray-400 uppercase tracking-widest mb-8">Opportunity Match Score</h3>
-
-                      <div className="relative w-48 h-48 flex items-center justify-center shrink-0 mb-6">
-                        <svg className="w-full h-full transform -rotate-90">
-                          <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
-                          <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="552" strokeDashoffset={552 - (552 * matchScore) / 100} className="text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)] transition-all duration-1000" />
-                        </svg>
-                        <div className="absolute flex flex-col items-center justify-center">
-                          <span className="text-5xl font-black text-white">{matchScore}</span>
-                          <span className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest mt-1">/ 100</span>
-                        </div>
+                {activeOsEvent && (
+                  <>
+                    {!userIntent ? (
+                      <div className="text-center py-32 border border-dashed border-cyan-500/30 rounded-3xl bg-cyan-900/5 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.05)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
+                        <Radar size={48} className="mx-auto text-cyan-600 mb-6 animate-spin-slow" />
+                        <h3 className="text-xl font-black text-white mb-2">Algorithmic Brief Offline</h3>
+                        <p className="text-gray-400 text-sm font-mono uppercase tracking-widest max-w-md mx-auto leading-relaxed">Initialize your Intent Vector on the left to compile your personalized Mission Brief and isolate target connections.</p>
                       </div>
-                      <p className="text-xs text-center text-gray-500 leading-relaxed">System has successfully isolated high-value targets based on your stated directives.</p>
-                    </div>
+                    ) : (
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Opportunity Score Graphic */}
+                        <div className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-8 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-cyan-500"></div>
+                          <h3 className="text-xs font-mono text-gray-400 uppercase tracking-widest mb-8">Opportunity Match Score</h3>
 
-                    {/* Matching Profiles */}
-                    <div className="lg:col-span-2 space-y-4">
-                      <h3 className="text-lg font-black text-white mb-2 flex items-center gap-2"><Users className="text-blue-400" /> High-Value Target Clusters</h3>
-                      {simulatedMatches.length === 0 ? (
-                        <div className="p-6 bg-black/40 border border-white/5 rounded-2xl text-center text-xs font-mono text-gray-500 uppercase">Awaiting network nodes to populate matrix.</div>
-                      ) : (
-                        simulatedMatches.map((match, i) => (
-                          <div key={i} className="bg-gradient-to-r from-[#0a0f1c] to-black border border-white/10 p-5 rounded-2xl flex items-center justify-between gap-4 hover:border-blue-500/30 transition group">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 rounded-xl bg-blue-900/30 flex items-center justify-center font-black text-blue-400 text-lg border border-blue-500/20 group-hover:scale-105 transition">
-                                {match.user?.name?.charAt(0)}
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-bold text-white leading-tight">{match.user?.name}</h4>
-                                <p className="text-[10px] text-blue-400 font-mono uppercase tracking-widest mb-1">{match.user?.role}</p>
-                                <p className="text-xs text-gray-400 line-clamp-1">{match.user?.headline || 'Optimized for target directive'}</p>
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">99% Match</span>
+                          <div className="relative w-48 h-48 flex items-center justify-center shrink-0 mb-6">
+                            <svg className="w-full h-full transform -rotate-90">
+                              <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+                              <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="552" strokeDashoffset={552 - (552 * matchScore) / 100} className="text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)] transition-all duration-1000" />
+                            </svg>
+                            <div className="absolute flex flex-col items-center justify-center">
+                              <span className="text-5xl font-black text-white">{matchScore}</span>
+                              <span className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest mt-1">/ 100</span>
                             </div>
                           </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
+                          <p className="text-xs text-center text-gray-500 leading-relaxed">System has successfully isolated high-value targets based on your stated directives.</p>
+                        </div>
+
+                        {/* Matching Profiles */}
+                        <div className="lg:col-span-2 space-y-4">
+                          <h3 className="text-lg font-black text-white mb-2 flex items-center gap-2"><Users className="text-blue-400" /> High-Value Target Clusters</h3>
+                          {simulatedMatches.length === 0 ? (
+                            <div className="p-6 bg-black/40 border border-white/5 rounded-2xl text-center text-xs font-mono text-gray-500 uppercase">Awaiting network nodes to populate matrix.</div>
+                          ) : (
+                            simulatedMatches.map((match, i) => (
+                              <div key={i} className="bg-gradient-to-r from-[#0a0f1c] to-black border border-white/10 p-5 rounded-2xl flex items-center justify-between gap-4 hover:border-blue-500/30 transition group">
+                                <div className="flex items-center gap-4">
+                                  <div className="w-12 h-12 rounded-xl bg-blue-900/30 flex items-center justify-center font-black text-blue-400 text-lg border border-blue-500/20 group-hover:scale-105 transition">
+                                    {match.user?.name?.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <h4 className="text-sm font-bold text-white leading-tight">{match.user?.name}</h4>
+                                    <p className="text-[10px] text-blue-400 font-mono uppercase tracking-widest mb-1">{match.user?.role}</p>
+                                    <p className="text-xs text-gray-400 line-clamp-1">{match.user?.headline || 'Optimized for target directive'}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">99% Match</span>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -410,9 +417,6 @@ const EventsPage = () => {
       </div>
     );
   }
-
-  // --- FALLBACK MOCK ICON FOR THE BUTTONS ---
-  const Crosshair = ({ className }) => <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="22" y1="12" x2="18" y2="12" /><line x1="6" y1="12" x2="2" y2="12" /><line x1="12" y1="6" x2="12" y2="2" /><line x1="12" y1="22" x2="12" y2="18" /></svg>;
 
   return (
     <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-blue-500/30 pb-20 relative overflow-hidden">
