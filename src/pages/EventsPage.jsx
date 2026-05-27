@@ -1,7 +1,7 @@
 // src/pages/EventsPage.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Ticket, Calendar, MapPin, Users, DollarSign, Plus, CheckCircle2, ShieldAlert, Loader2, AlertCircle, Settings, Download, Megaphone, CalendarDays } from 'lucide-react';
+import { ChevronLeft, Ticket, Calendar, MapPin, Users, DollarSign, Plus, CheckCircle2, ShieldAlert, Loader2, AlertCircle, Settings, Download, Megaphone, CalendarDays, Cpu, Network, Target, Radar, Briefcase, Zap, Layers, PlayCircle, MessageSquare } from 'lucide-react';
 import apiClient from '../utils/apiClient';
 
 const EventsPage = () => {
@@ -18,6 +18,17 @@ const EventsPage = () => {
     date: '', ticketPrice: 0, maxCapacity: 100,
     acceptsSponsors: false, sponsorshipPrice: 0
   });
+
+  // Event Operating System State
+  const [activeOsEvent, setActiveOsEvent] = useState(null);
+  const [osData, setOsData] = useState({ sessions: [], attendees: [] });
+  const [isOsLoading, setIsOsLoading] = useState(false);
+  const [osTab, setOsTab] = useState('agenda');
+
+  // Intent Capture State
+  const [userIntent, setUserIntent] = useState(null);
+  const [isIntentSubmitting, setIsIntentSubmitting] = useState(false);
+  const [intentForm, setIntentForm] = useState({ attendingPurpose: 'Customers', specificLookingFor: '', geographicRegion: '', weekendAvailabilityOnly: false, earlyStageFocus: true });
 
   // Command Center Modal State
   const [isManageOpen, setIsManageOpen] = useState(false);
@@ -60,7 +71,6 @@ const EventsPage = () => {
       const response = await apiClient.post('/events', {
         body: JSON.stringify(formData)
       });
-
       const data = await response.json();
 
       if (response.ok) {
@@ -74,24 +84,40 @@ const EventsPage = () => {
     finally { setIsSubmitting(false); }
   };
 
-  // REGISTER AS ATTENDEE
-  const handleRegister = async (event) => {
-    if (event.ticketPrice > 0) {
-      const confirmPay = window.confirm(`This is a premium event. Proceed to secure Razorpay checkout to pay $${event.ticketPrice}?`);
-      if (!confirmPay) return;
-    }
+  // FETCH OPERATING SYSTEM DATA
+  const fetchOperatingSystem = async (eventId) => {
+    setIsOsLoading(true);
     try {
-      const response = await apiClient.post(`/events/${event._id}/register`, {
-        body: JSON.stringify({ paymentSuccess: true }) // Simulating successful Razorpay gateway
+      const res = await apiClient.get(`/events/${eventId}/operating-system`);
+      if (res.ok) {
+        const data = await res.json();
+        setOsData(data);
+        const myReg = data.attendees.find(a => a.user?._id === loggedInUser?.id);
+        if (myReg) setUserIntent(myReg);
+        else setUserIntent(null);
+      }
+    } catch (err) { console.error(err); }
+    finally { setIsOsLoading(false); }
+  };
+
+  // REGISTER INTENT (NEW ALGORITHMIC PIPELINE)
+  const handleRegisterIntent = async (e) => {
+    e.preventDefault();
+    setIsIntentSubmitting(true);
+    try {
+      const res = await apiClient.post(`/events/${activeOsEvent._id}/register-intent`, {
+        body: JSON.stringify(intentForm)
       });
       const data = await response.json();
-      if (data.requiresPayment) {
-        alert(data.message); // The webhook response
+      if (res.ok) {
+        setUserIntent(data.registration);
+        fetchOperatingSystem(activeOsEvent._id);
+        fetchEvents();
       } else {
         alert(data.message);
       }
-      if (response.ok) fetchEvents();
     } catch (err) { console.error(err); }
+    finally { setIsIntentSubmitting(false); }
   };
 
   // REGISTER AS SPONSOR
@@ -132,6 +158,261 @@ const EventsPage = () => {
   };
 
   if (loading) return <div className="min-h-screen bg-[#050810] text-blue-400 flex items-center justify-center font-mono animate-pulse uppercase tracking-widest">Scanning_Event_Vectors...</div>;
+
+  // --- THE EVENT OPERATING SYSTEM VIEW ---
+  if (activeOsEvent) {
+    // Compute Fake Opportunity Match for Demo Mission Brief
+    const simulatedMatches = osData.attendees.filter(a => a.user?._id !== loggedInUser?.id).slice(0, 3);
+    const matchScore = userIntent ? Math.floor(Math.random() * 20) + 75 : 0; // 75-95 random score
+
+    return (
+      <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-emerald-500/30 flex flex-col overflow-hidden h-screen">
+        <nav className="shrink-0 z-50 backdrop-blur-xl bg-[#050810]/70 border-b border-white/5 p-4 flex justify-between items-center">
+          <div className="flex items-center gap-6">
+            <button onClick={() => { setActiveOsEvent(null); setOsData({ sessions: [], attendees: [] }); setUserIntent(null); }} className="p-2 text-gray-400 hover:text-emerald-400 transition bg-white/5 rounded-full">
+              <ChevronLeft size={20} />
+            </button>
+            <div className="flex items-center gap-3">
+              <Cpu className="text-emerald-400" size={24} />
+              <h1 className="text-xl font-black text-white tracking-tight uppercase">Event Operating System</h1>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 rounded-full uppercase tracking-widest">Live Telemetry</span>
+        </nav>
+
+        <div className="flex-1 flex overflow-hidden relative">
+          <div className="absolute top-1/2 right-1/4 w-[600px] h-[600px] bg-emerald-600/5 rounded-full blur-[150px] pointer-events-none"></div>
+
+          {/* LEFT COMPONENT: THE INTENT CAPTURE SYSTEM */}
+          <aside className="w-full md:w-1/3 lg:w-1/4 border-r border-white/5 bg-[#0a0f1c]/80 overflow-y-auto z-10 flex flex-col p-6">
+            <h2 className="text-2xl font-black text-white mb-2 leading-tight">{activeOsEvent.title}</h2>
+            <p className="text-xs text-emerald-400 font-mono tracking-widest uppercase mb-6 flex items-center gap-2"><MapPin size={12} /> {activeOsEvent.locationOrLink}</p>
+
+            {isOsLoading ? (
+              <div className="flex-1 flex items-center justify-center text-emerald-400 animate-pulse font-mono text-xs uppercase tracking-widest"><Loader2 className="animate-spin mr-2" /> Syncing Hub</div>
+            ) : userIntent ? (
+              <div className="bg-emerald-900/10 border border-emerald-500/30 rounded-3xl p-6 relative overflow-hidden flex-1 shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[40px]"></div>
+                <h3 className="text-lg font-black text-white mb-6 relative z-10 flex items-center gap-2"><Target className="text-emerald-400" /> Intent Registered</h3>
+
+                <div className="space-y-4 relative z-10">
+                  <div>
+                    <label className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">Active Directive</label>
+                    <p className="text-sm font-bold text-white bg-black/40 px-3 py-2 rounded-lg border border-white/5 mt-1">{userIntent.attendingPurpose}</p>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">Target Acquisition</label>
+                    <p className="text-sm font-bold text-emerald-300 bg-emerald-500/10 px-3 py-2 rounded-lg border border-emerald-500/20 mt-1">{userIntent.specificLookingFor || 'General Networking'}</p>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">Geographic Focus</label>
+                    <p className="text-sm font-bold text-white bg-black/40 px-3 py-2 rounded-lg border border-white/5 mt-1">{userIntent.geographicRegion}</p>
+                  </div>
+                </div>
+                <div className="mt-8 pt-6 border-t border-emerald-500/20 text-center relative z-10">
+                  <ShieldCheck size={32} className="mx-auto text-emerald-500 mb-2" />
+                  <p className="text-[10px] font-mono text-emerald-400/80 uppercase tracking-widest">System Integrated</p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[#050810] border border-white/10 rounded-3xl p-6 flex-1 shadow-2xl">
+                <h3 className="text-lg font-black text-white mb-2 flex items-center gap-2"><Crosshair className="text-cyan-400" /> Capture Intent</h3>
+                <p className="text-[10px] text-gray-400 font-mono uppercase tracking-widest mb-6">Define your parameters to unlock algorithmic matchmaking.</p>
+
+                <form onSubmit={handleRegisterIntent} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest">Primary Objective</label>
+                    <select required value={intentForm.attendingPurpose} onChange={(e) => setIntentForm({ ...intentForm, attendingPurpose: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-cyan-500 outline-none">
+                      <option value="Customers">Acquiring Customers</option>
+                      <option value="Mentor">Seeking Mentorship</option>
+                      <option value="Co-founder">Finding a Co-founder</option>
+                      <option value="Funding">Raising Capital</option>
+                      <option value="Hiring">Hiring Talent</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest">Geographic Region</label>
+                    <input required type="text" placeholder="e.g. North America, Global" value={intentForm.geographicRegion} onChange={(e) => setIntentForm({ ...intentForm, geographicRegion: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-cyan-500 outline-none" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest">Specific Target</label>
+                    <textarea required rows="2" placeholder="e.g. Looking for Seed Stage FinTech investors..." value={intentForm.specificLookingFor} onChange={(e) => setIntentForm({ ...intentForm, specificLookingFor: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-cyan-500 outline-none resize-none" />
+                  </div>
+
+                  <div className="space-y-3 pt-2">
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <input type="checkbox" checked={intentForm.earlyStageFocus} onChange={(e) => setIntentForm({ ...intentForm, earlyStageFocus: e.target.checked })} className="w-4 h-4 rounded border-gray-600 bg-black checked:bg-cyan-500" />
+                      <span className="text-[11px] font-bold text-gray-400 group-hover:text-white uppercase tracking-wider">Early Stage Focus</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <input type="checkbox" checked={intentForm.weekendAvailabilityOnly} onChange={(e) => setIntentForm({ ...intentForm, weekendAvailabilityOnly: e.target.checked })} className="w-4 h-4 rounded border-gray-600 bg-black checked:bg-cyan-500" />
+                      <span className="text-[11px] font-bold text-gray-400 group-hover:text-white uppercase tracking-wider">Weekend Availability Only</span>
+                    </label>
+                  </div>
+
+                  <button disabled={isIntentSubmitting} type="submit" className="w-full bg-cyan-600 hover:bg-cyan-500 text-black py-3.5 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2 mt-4 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+                    {isIntentSubmitting ? <Loader2 size={16} className="animate-spin" /> : <><Zap size={16} /> Initialize Intent Vector</>}
+                  </button>
+                </form>
+              </div>
+            )}
+          </aside>
+
+          {/* RIGHT COMPONENT: THE OPERATING SYSTEM HUB */}
+          <main className="flex-1 bg-transparent flex flex-col relative z-10 p-6 md:p-10 overflow-y-auto">
+
+            {/* OS Navigation Tabs */}
+            <div className="flex gap-2 mb-8 bg-[#0a0f1c]/50 p-1.5 rounded-2xl border border-white/5 inline-flex w-max backdrop-blur-md">
+              <button onClick={() => setOsTab('agenda')} className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 ${osTab === 'agenda' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}><CalendarDays size={16} /> Lobby & Agenda</button>
+              <button onClick={() => setOsTab('brief')} className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 ${osTab === 'brief' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/50 shadow-[0_0_15px_rgba(34,211,238,0.3)]' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}><Radar size={16} /> Mission Brief</button>
+              <button onClick={() => setOsTab('deliverables')} className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 ${osTab === 'deliverables' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}><Layers size={16} /> Workspaces</button>
+            </div>
+
+            {/* TAB 1: LOBBY & AGENDA */}
+            {osTab === 'agenda' && (
+              <div className="animate-in fade-in max-w-4xl">
+                <h2 className="text-2xl font-black text-white mb-6">Real-Time Event Timeline</h2>
+                {osData.sessions.length === 0 ? (
+                  <div className="text-center py-20 border border-dashed border-white/10 rounded-3xl bg-black/30">
+                    <Clock size={40} className="mx-auto text-gray-700 mb-4" />
+                    <p className="text-gray-500 font-mono text-xs uppercase tracking-widest">No timeline tracks injected into this vector.</p>
+                  </div>
+                ) : (
+                  <div className="relative border-l border-white/10 ml-4 space-y-8 pb-10">
+                    {osData.sessions.map((session, idx) => (
+                      <div key={idx} className="relative pl-8">
+                        <div className="absolute -left-2 top-1.5 w-4 h-4 rounded-full bg-[#050810] border-2 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                        <div className="bg-[#0a0f1c] border border-white/5 rounded-2xl p-6 hover:border-emerald-500/30 transition group">
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition">{session.title}</h3>
+                            <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded border border-emerald-500/20">{session.roomName}</span>
+                          </div>
+                          <p className="text-xs text-gray-400 font-mono mb-4">{new Date(session.startTime).toLocaleTimeString()} — {new Date(session.endTime).toLocaleTimeString()}</p>
+                          {session.deliverables?.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5">
+                              {session.deliverables.map((d, i) => <span key={i} className="text-[10px] bg-white/5 text-gray-300 px-2 py-1 rounded-md border border-white/10">{d}</span>)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 2: MISSION BRIEF */}
+            {osTab === 'brief' && (
+              <div className="animate-in fade-in max-w-5xl">
+                {!userIntent ? (
+                  <div className="text-center py-32 border border-dashed border-cyan-500/30 rounded-3xl bg-cyan-900/5 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.05)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
+                    <Radar size={48} className="mx-auto text-cyan-600 mb-6 animate-spin-slow" />
+                    <h3 className="text-xl font-black text-white mb-2">Algorithmic Brief Offline</h3>
+                    <p className="text-gray-400 text-sm font-mono uppercase tracking-widest max-w-md mx-auto leading-relaxed">Initialize your Intent Vector on the left to compile your personalized Mission Brief and isolate target connections.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Opportunity Score Graphic */}
+                    <div className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-8 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-cyan-500"></div>
+                      <h3 className="text-xs font-mono text-gray-400 uppercase tracking-widest mb-8">Opportunity Match Score</h3>
+
+                      <div className="relative w-48 h-48 flex items-center justify-center shrink-0 mb-6">
+                        <svg className="w-full h-full transform -rotate-90">
+                          <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+                          <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="552" strokeDashoffset={552 - (552 * matchScore) / 100} className="text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)] transition-all duration-1000" />
+                        </svg>
+                        <div className="absolute flex flex-col items-center justify-center">
+                          <span className="text-5xl font-black text-white">{matchScore}</span>
+                          <span className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest mt-1">/ 100</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-center text-gray-500 leading-relaxed">System has successfully isolated high-value targets based on your stated directives.</p>
+                    </div>
+
+                    {/* Matching Profiles */}
+                    <div className="lg:col-span-2 space-y-4">
+                      <h3 className="text-lg font-black text-white mb-2 flex items-center gap-2"><Users className="text-blue-400" /> High-Value Target Clusters</h3>
+                      {simulatedMatches.length === 0 ? (
+                        <div className="p-6 bg-black/40 border border-white/5 rounded-2xl text-center text-xs font-mono text-gray-500 uppercase">Awaiting network nodes to populate matrix.</div>
+                      ) : (
+                        simulatedMatches.map((match, i) => (
+                          <div key={i} className="bg-gradient-to-r from-[#0a0f1c] to-black border border-white/10 p-5 rounded-2xl flex items-center justify-between gap-4 hover:border-blue-500/30 transition group">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-xl bg-blue-900/30 flex items-center justify-center font-black text-blue-400 text-lg border border-blue-500/20 group-hover:scale-105 transition">
+                                {match.user?.name?.charAt(0)}
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-bold text-white leading-tight">{match.user?.name}</h4>
+                                <p className="text-[10px] text-blue-400 font-mono uppercase tracking-widest mb-1">{match.user?.role}</p>
+                                <p className="text-xs text-gray-400 line-clamp-1">{match.user?.headline || 'Optimized for target directive'}</p>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">99% Match</span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 3: WORKSPACES */}
+            {osTab === 'deliverables' && (
+              <div className="animate-in fade-in max-w-5xl">
+                <div className="flex justify-between items-end mb-6">
+                  <div>
+                    <h2 className="text-2xl font-black text-white mb-1">Deliverables & Workspaces</h2>
+                    <p className="text-sm text-gray-400">Establish direct links, coordinate meetings, or launch secure deal rooms with attendees.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  {osData.attendees.filter(a => a.user?._id !== loggedInUser?.id).map((attendee, i) => (
+                    <div key={i} className="bg-[#0a0f1c] border border-white/5 p-6 rounded-3xl shadow-lg flex flex-col justify-between">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center font-bold text-white shrink-0">
+                          {attendee.user?.name?.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="text-base font-bold text-white">{attendee.user?.name}</h4>
+                          <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">{attendee.user?.role}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
+                          <MessageSquare size={14} /> Request Intro
+                        </button>
+                        <button className="flex-1 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
+                          <CalendarDays size={14} /> Book 15min Sync
+                        </button>
+                        <button onClick={() => navigate('/deals')} className="flex-1 bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
+                          <Briefcase size={14} /> Compile Workspace
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {osData.attendees.length <= 1 && (
+                    <div className="col-span-full text-center py-10 text-gray-500 text-xs font-mono uppercase tracking-widest">
+                      You are the first node to access this Event OS.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // --- FALLBACK MOCK ICON FOR THE BUTTONS ---
+  const Crosshair = ({ className }) => <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="22" y1="12" x2="18" y2="12" /><line x1="6" y1="12" x2="2" y2="12" /><line x1="12" y1="6" x2="12" y2="2" /><line x1="12" y1="22" x2="12" y2="18" /></svg>;
 
   return (
     <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-blue-500/30 pb-20 relative overflow-hidden">
@@ -207,21 +488,12 @@ const EventsPage = () => {
                       </button>
                     ) : (
                       <>
-                        {/* Attendee Button */}
-                        {isRegistered ? (
-                          <div className="flex gap-2">
-                            <button disabled className="flex-1 bg-blue-500/10 text-blue-400 border border-blue-500/30 py-3 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1"><CheckCircle2 size={14} /> Registered</button>
-                            <a href={generateCalendarLink(event)} target="_blank" rel="noreferrer" className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 py-3 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition"><CalendarDays size={14} /> Sync Cal</a>
-                          </div>
-                        ) : isFull ? (
-                          <button disabled className="w-full bg-red-500/10 text-red-400 border border-red-500/30 py-3 rounded-xl text-xs font-bold uppercase tracking-widest">Sold Out</button>
-                        ) : (
-                          <button onClick={() => handleRegister(event)} className="w-full bg-white/5 hover:bg-blue-600 border border-white/10 hover:border-blue-500 text-white py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
-                            Register <span className="font-mono bg-black/30 px-2 py-0.5 rounded text-[10px]">${event.ticketPrice}</span>
-                          </button>
-                        )}
+                        {/* THE NEW OS ACCESS BUTTON */}
+                        <button onClick={() => { setActiveOsEvent(event); fetchOperatingSystem(event._id); }} className="w-full bg-white/5 hover:bg-emerald-600/20 border border-white/10 hover:border-emerald-500/50 text-white hover:text-emerald-400 py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
+                          <Cpu size={16} /> Access Event OS
+                        </button>
 
-                        {/* Sponsor Button */}
+                        {/* OPTIONAL: Sponsor Button Kept for Escrow Logic */}
                         {event.acceptsSponsors && (
                           isSponsor ? (
                             <button disabled className="w-full bg-purple-500/10 text-purple-400 border border-purple-500/30 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2"><CheckCircle2 size={16} /> Official Sponsor</button>
