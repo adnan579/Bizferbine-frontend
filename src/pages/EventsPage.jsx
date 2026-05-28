@@ -1,8 +1,9 @@
 // src/pages/EventsPage.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Ticket, Calendar, MapPin, Users, DollarSign, Plus, CheckCircle2, ShieldAlert, Loader2, AlertCircle, Settings, Download, Megaphone, CalendarDays, Cpu, Network, Target, Radar, Briefcase, Zap, Layers, PlayCircle, MessageSquare, Clock, ShieldCheck } from 'lucide-react';
+import { ChevronLeft, Ticket, Calendar, MapPin, Users, DollarSign, Plus, CheckCircle2, ShieldAlert, Loader2, AlertCircle, Settings, Download, Megaphone, CalendarDays, Cpu, Network, Target, Radar, Briefcase, Zap, Layers, PlayCircle, MessageSquare, Clock, ShieldCheck, BrainCircuit, Sparkles } from 'lucide-react';
 import apiClient from '../utils/apiClient';
+import { io } from 'socket.io-client';
 
 // --- FALLBACK MOCK ICON FOR THE BUTTONS ---
 const Crosshair = ({ className }) => <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="22" y1="12" x2="18" y2="12" /><line x1="6" y1="12" x2="2" y2="12" /><line x1="12" y1="6" x2="12" y2="2" /><line x1="12" y1="22" x2="12" y2="18" /></svg>;
@@ -27,6 +28,11 @@ const EventsPage = () => {
   const [osData, setOsData] = useState({ sessions: [], attendees: [] });
   const [isOsLoading, setIsOsLoading] = useState(false);
   const [osTab, setOsTab] = useState('agenda');
+  const [livePulse, setLivePulse] = useState({ activeNetworkingCount: 0, workspacesCreatedToday: 0, connectionsFormed: 0, recentJoiners: [] });
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [executingIntent, setExecutingIntent] = useState(null); // Tracks which user ID we are currently executing on
+  const [aiIntelligence, setAiIntelligence] = useState(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   // Intent Capture State
   const [userIntent, setUserIntent] = useState(null);
@@ -46,6 +52,52 @@ const EventsPage = () => {
     const userStr = localStorage.getItem('user');
     if (userStr && userStr !== "undefined") loggedInUser = JSON.parse(userStr);
   } catch (err) { console.error(err); }
+
+  useEffect(() => {
+    let socket;
+    let pulseInterval;
+
+    if (activeOsEvent) {
+      // 1. Connect WebSocket
+      socket = io('https://bizferbine-backend.onrender.com');
+      socket.emit('join_event_os', { eventId: activeOsEvent._id, user: JSON.parse(localStorage.getItem('user')) });
+
+      socket.on('node_entered_os', (data) => {
+        // Instantly increment active users when a ping is received
+        setLivePulse(prev => ({ ...prev, activeNetworkingCount: prev.activeNetworkingCount + 1 }));
+      });
+
+      // 2. Fetch Deep Pulse Data Periodically
+      const fetchPulse = async () => {
+        try {
+          const res = await apiClient.get(`/events/${activeOsEvent._id}/pulse`);
+          if (res.ok) {
+            const data = await res.json();
+            setLivePulse(data.pulse);
+          }
+        } catch (err) { console.error("Pulse error:", err); }
+      };
+
+      fetchPulse();
+      pulseInterval = setInterval(fetchPulse, 30000); // Sync every 30s
+
+      if (activeOsEvent.status === 'Ended') {
+        setIsAiLoading(true);
+        apiClient.get(`/events/${activeOsEvent._id}/intelligence`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => { if (data) setAiIntelligence(data); setIsAiLoading(false); })
+          .catch(() => setIsAiLoading(false));
+      }
+    }
+
+    return () => {
+      if (socket && activeOsEvent) {
+        socket.emit('leave_event_os', { eventId: activeOsEvent._id, user: JSON.parse(localStorage.getItem('user')) });
+        socket.disconnect();
+      }
+      clearInterval(pulseInterval);
+    };
+  }, [activeOsEvent]);
 
   const fetchEvents = async () => {
     try {
@@ -160,6 +212,38 @@ const EventsPage = () => {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}&location=${location}`;
   };
 
+  const handleEventStateTransition = async (targetState) => {
+    setIsTransitioning(true);
+    try {
+      const res = await apiClient.put(`/events/${activeOsEvent._id}/state`, {
+        body: JSON.stringify({ targetState })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setActiveOsEvent(data.event);
+        // Update the event in the main list too
+        setEvents(events.map(e => e._id === data.event._id ? data.event : e));
+      }
+    } catch (error) { console.error("State transition failed", error); }
+    finally { setIsTransitioning(false); }
+  };
+
+  const handleExecuteIntent = async (targetUserId, intentType) => {
+    setExecutingIntent(targetUserId);
+    try {
+      const res = await apiClient.post(`/execution/intent/${targetUserId}`, {
+        body: JSON.stringify({ intentType, message: `I would like to initiate a ${intentType} based on our Event OS match.`, eventContext: activeOsEvent._id })
+      });
+      if (res.ok) {
+        alert(`✅ ${intentType} Intent dispatched successfully!`);
+      } else {
+        const error = await res.json();
+        alert(`❌ ${error.message}`);
+      }
+    } catch (error) { console.error("Execution failed", error); }
+    finally { setExecutingIntent(null); }
+  };
+
   if (loading) return <div className="min-h-screen bg-[#050810] text-blue-400 flex items-center justify-center font-mono animate-pulse uppercase tracking-widest">Scanning_Event_Vectors...</div>;
 
   // --- THE EVENT OPERATING SYSTEM VIEW ---
@@ -178,6 +262,16 @@ const EventsPage = () => {
             <div className="flex items-center gap-3">
               <Cpu className="text-emerald-400" size={24} />
               <h1 className="text-xl font-black text-white tracking-tight uppercase">Event Operating System</h1>
+              {activeOsEvent.organizerId === loggedInUser?.id && activeOsEvent.status === 'Scheduled' && (
+                <button onClick={() => handleEventStateTransition('Live')} disabled={isTransitioning} className="ml-4 bg-emerald-600 hover:bg-emerald-500 text-black px-4 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-2">
+                  {isTransitioning ? <Loader2 size={14} className="animate-spin" /> : <PlayCircle size={14} />} GO LIVE
+                </button>
+              )}
+              {activeOsEvent.organizerId === loggedInUser?.id && activeOsEvent.status === 'Live' && (
+                <button onClick={() => handleEventStateTransition('Ended')} disabled={isTransitioning} className="ml-4 bg-rose-600 hover:bg-rose-500 text-white px-4 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-2">
+                  {isTransitioning ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} END EVENT
+                </button>
+              )}
             </div>
           </div>
           <span className="text-[10px] font-mono text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 rounded-full uppercase tracking-widest">Live Telemetry</span>
@@ -269,6 +363,11 @@ const EventsPage = () => {
               <button onClick={() => setOsTab('agenda')} className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 ${osTab === 'agenda' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}><CalendarDays size={16} /> Lobby & Agenda</button>
               <button onClick={() => setOsTab('brief')} className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 ${osTab === 'brief' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/50 shadow-[0_0_15px_rgba(34,211,238,0.3)]' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}><Radar size={16} /> Mission Brief</button>
               <button onClick={() => setOsTab('deliverables')} className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 ${osTab === 'deliverables' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}><Layers size={16} /> Workspaces</button>
+              {activeOsEvent.status === 'Ended' && (
+                <button onClick={() => setOsTab('postmortem')} className={`px-4 py-3 text-xs font-bold transition flex items-center gap-2 ${osTab === 'postmortem' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-gray-500 hover:text-white'}`}>
+                  <BrainCircuit size={14} /> AI POST-MORTEM
+                </button>
+              )}
             </div>
 
             {/* TAB 1: LOBBY & AGENDA */}
@@ -319,9 +418,9 @@ const EventsPage = () => {
                     ) : (
                       <>
                         <div className="grid grid-cols-3 gap-4 mb-6 bg-black/40 border border-cyan-500/20 rounded-2xl p-4 font-mono text-xs">
-                          <div className="text-center"><p className="text-cyan-400 font-bold text-lg">⚡ Live Pulse</p><p className="text-gray-400 mt-1">Founders Active</p></div>
-                          <div className="text-center"><p className="text-emerald-400 font-bold text-lg">⚙️ Workspaces</p><p className="text-gray-400 mt-1">Spawned Execution Nodes</p></div>
-                          <div className="text-center"><p className="text-purple-400 font-bold text-lg">🔥 Trends</p><p className="text-gray-400 mt-1">AI Projects Running</p></div>
+                          <div className="text-center"><p className="text-cyan-400 font-bold text-lg">⚡ {livePulse.activeNetworkingCount}</p><p className="text-gray-400 mt-1">Founders Active</p></div>
+                          <div className="text-center"><p className="text-emerald-400 font-bold text-lg">⚙️ {livePulse.workspacesCreatedToday}</p><p className="text-gray-400 mt-1">Workspaces Spawned</p></div>
+                          <div className="text-center"><p className="text-purple-400 font-bold text-lg">🔥 {livePulse.connectionsFormed}</p><p className="text-gray-400 mt-1">Connections Formed</p></div>
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                           {/* Opportunity Score Graphic */}
@@ -367,6 +466,14 @@ const EventsPage = () => {
                                           ))}
                                         </div>
                                       )}
+                                      <div className="flex gap-2 mt-4">
+                                        <button onClick={() => handleExecuteIntent(match.user?._id, 'Start Project')} disabled={executingIntent === match.user?._id} className="flex-1 bg-white/5 hover:bg-blue-600/20 text-white border border-white/10 py-2 rounded-lg text-[10px] font-bold transition uppercase tracking-widest flex justify-center items-center gap-1">
+                                          {executingIntent === match.user?._id ? <Loader2 size={12} className="animate-spin" /> : 'Start Project'}
+                                        </button>
+                                        <button onClick={() => handleExecuteIntent(match.user?._id, 'Request Advisor')} disabled={executingIntent === match.user?._id} className="flex-1 bg-white/5 hover:bg-purple-600/20 text-white border border-white/10 py-2 rounded-lg text-[10px] font-bold transition uppercase tracking-widest flex justify-center items-center gap-1">
+                                          {executingIntent === match.user?._id ? <Loader2 size={12} className="animate-spin" /> : 'Req Advisor'}
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
                                   <div className="text-right shrink-0">
@@ -380,6 +487,42 @@ const EventsPage = () => {
                       </>
                     )}
                   </>
+                )}
+              </div>
+            )}
+
+            {osTab === 'postmortem' && activeOsEvent.status === 'Ended' && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+                {isAiLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20"><Loader2 className="animate-spin text-purple-500 mb-4" size={32} /><p className="text-purple-400 font-mono text-xs animate-pulse">Gemini 2.5 Flash is compiling ecosystem telemetry...</p></div>
+                ) : aiIntelligence ? (
+                  <>
+                    <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/10 border border-purple-500/30 p-6 rounded-2xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-4 opacity-10"><BrainCircuit size={100} /></div>
+                      <h3 className="text-sm font-black text-purple-400 uppercase tracking-widest mb-2 flex items-center gap-2"><Sparkles size={16} /> Executive Summary</h3>
+                      <p className="text-gray-300 text-sm leading-relaxed relative z-10">{aiIntelligence.executiveSummary}</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-black/40 border border-white/5 rounded-2xl p-5">
+                        <h4 className="text-xs font-bold text-emerald-400 mb-4 flex items-center gap-2"><Target size={14} /> High-ROI Clusters</h4>
+                        <ul className="space-y-3">
+                          {aiIntelligence.highRoiRooms?.map((room, idx) => (
+                            <li key={idx} className="text-sm text-gray-300 flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />{room}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="bg-black/40 border border-white/5 rounded-2xl p-5">
+                        <h4 className="text-xs font-bold text-rose-400 mb-4 flex items-center gap-2"><AlertCircle size={14} /> Missed Opportunities</h4>
+                        <ul className="space-y-3">
+                          {aiIntelligence.missedOpportunities?.map((opp, idx) => (
+                            <li key={idx} className="text-sm text-gray-300 flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 shrink-0" />{opp}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-10"><p className="text-gray-500 text-xs font-mono">Intelligence artifact not generated or failed to compile.</p></div>
                 )}
               </div>
             )}
