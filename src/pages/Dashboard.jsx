@@ -1,11 +1,11 @@
 // src/pages/Dashboard.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { 
-  Briefcase, BrainCircuit, Zap, Ticket, RefreshCcw, HeartPulse, 
-  Bell, Search, MessageSquareLock, ArrowRight, Activity, Clock, 
-  CheckCircle2, TrendingUp, ShieldCheck, X, Home, Users, MessageSquare, 
-  User, Eye, MousePointerClick, Code, ExternalLink, Star, UserPlus 
+import {
+  Briefcase, BrainCircuit, Zap, Ticket, RefreshCcw, HeartPulse,
+  Bell, Search, MessageSquareLock, ArrowRight, Activity, Clock,
+  CheckCircle2, TrendingUp, ShieldCheck, X, Home, Users, MessageSquare,
+  User, Eye, MousePointerClick, Code, ExternalLink, Star, UserPlus, Target
 } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
 import apiClient from '../utils/apiClient';
@@ -25,28 +25,28 @@ const timeAgo = (date) => {
 const getEventDisplay = (event) => {
   const actorName = event.actor ? event.actor.name.split(' ')[0] : "Someone";
   const actorRole = event.actor ? event.actor.role : "A user";
-  
-  switch(event.eventType) {
+
+  switch (event.eventType) {
     case 'PROFILE_VIEW':
-      return { icon: <Eye size={14} className="text-blue-400"/>, text: `${actorRole} viewed your profile.` };
+      return { icon: <Eye size={14} className="text-blue-400" />, text: `${actorRole} viewed your profile.` };
     case 'PORTFOLIO_CLICK':
-      return { icon: <MousePointerClick size={14} className="text-purple-400"/>, text: `${actorName} clicked your portfolio.` };
+      return { icon: <MousePointerClick size={14} className="text-purple-400" />, text: `${actorName} clicked your portfolio.` };
     case 'GITHUB_CLICK':
-      return { icon: <Code size={14} className="text-gray-400"/>, text: `${actorName} viewed your GitHub.` };
+      return { icon: <Code size={14} className="text-gray-400" />, text: `${actorName} viewed your GitHub.` };
     case 'LINKEDIN_CLICK':
-      return { icon: <Users size={14} className="text-blue-500"/>, text: `${actorName} checked your LinkedIn.` };
+      return { icon: <Users size={14} className="text-blue-500" />, text: `${actorName} checked your LinkedIn.` };
     case 'WEBSITE_CLICK':
-      return { icon: <ExternalLink size={14} className="text-emerald-400"/>, text: `${actorName} visited your website.` };
+      return { icon: <ExternalLink size={14} className="text-emerald-400" />, text: `${actorName} visited your website.` };
     case 'MENTORSHIP_REQUEST':
-      return { icon: <BrainCircuit size={14} className="text-indigo-400"/>, text: `${actorName} requested mentorship!` };
+      return { icon: <BrainCircuit size={14} className="text-indigo-400" />, text: `${actorName} requested mentorship!` };
     case 'MENTORSHIP_ACCEPTED':
-      return { icon: <CheckCircle2 size={14} className="text-emerald-400"/>, text: `${actorName} accepted your request.` };
+      return { icon: <CheckCircle2 size={14} className="text-emerald-400" />, text: `${actorName} accepted your request.` };
     case 'REVIEW_RECEIVED':
-      return { icon: <Star size={14} className="text-yellow-400"/>, text: `${actorName} left you a review.` };
+      return { icon: <Star size={14} className="text-yellow-400" />, text: `${actorName} left you a review.` };
     case 'FOLLOW':
-      return { icon: <UserPlus size={14} className="text-blue-400"/>, text: `${actorName} started following you.` };
+      return { icon: <UserPlus size={14} className="text-blue-400" />, text: `${actorName} started following you.` };
     default:
-      return { icon: <Activity size={14} className="text-gray-400"/>, text: `${actorName} interacted with your profile.` };
+      return { icon: <Activity size={14} className="text-gray-400" />, text: `${actorName} interacted with your profile.` };
   }
 };
 
@@ -59,34 +59,46 @@ const getImageUrl = (path) => {
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  const [unreadCount, setUnreadCount] = useState(0); 
+
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const [analytics, setAnalytics] = useState({ weeklyProfileViews: 0, projectClicks: 0, mentorshipRequests: 0 });
-  const [recentPulse, setRecentPulse] = useState([]); 
+  const [recentPulse, setRecentPulse] = useState([]);
+  const [momentum, setMomentum] = useState({ aggregateScore: 0, data: { responsiveness: 50, followThrough: 50, execution: 0, participation: 0, trend: 'Stable' } });
+  const [isMomentumLoading, setIsMomentumLoading] = useState(true);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
-    
+
     if (!token) {
       navigate('/login');
     } else if (userData) {
-      setUser(JSON.parse(userData));
-      setUnreadCount(2); 
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+      setUnreadCount(2);
 
       apiClient.get('/analytics/summary')
-      .then(res => res.json())
-      .then(data => {
-        setAnalytics(data.summary || { weeklyProfileViews: 0, projectClicks: 0, mentorshipRequests: 0 });
-        setRecentPulse(data.recentPulse || []); 
-      })
-      .catch(err => console.error("Analytics fetch error:", err));
+        .then(res => res.json())
+        .then(data => {
+          setAnalytics(data.summary || { weeklyProfileViews: 0, projectClicks: 0, mentorshipRequests: 0 });
+          setRecentPulse(data.recentPulse || []);
+        })
+        .catch(err => console.error("Analytics fetch error:", err));
+
+      // Fetch Phase 5 Momentum Data
+      apiClient.get(`/analytics/momentum/${parsedUser.id}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) setMomentum(data);
+          setIsMomentumLoading(false);
+        })
+        .catch(() => setIsMomentumLoading(false));
     }
   }, [navigate]);
 
@@ -109,7 +121,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-blue-500/30 relative overflow-hidden pb-24 md:pb-10">
-      
+
       <NotificationCenter isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} onUnreadUpdate={setUnreadCount} />
 
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/5 via-[#050810] to-[#050810] pointer-events-none"></div>
@@ -117,7 +129,7 @@ const Dashboard = () => {
 
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#050810]/90 border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-4">
-          
+
           <div className="flex items-center shrink-0">
             <Link to="/" className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:scale-105 transition-transform">
               <span className="text-white text-xl font-black">B</span>
@@ -125,7 +137,7 @@ const Dashboard = () => {
           </div>
 
           <div className="flex-1 max-w-xl relative group hidden md:block mx-6">
-            <input 
+            <input
               type="text" placeholder="Search people, deals, skills, events..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && searchQuery.trim() && navigate(`/search?q=${encodeURIComponent(searchQuery)}`)}
               className="w-full bg-white/[0.03] border border-white/10 rounded-full px-12 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.05] transition placeholder-gray-500"
@@ -134,8 +146,8 @@ const Dashboard = () => {
           </div>
 
           <div className="flex items-center gap-1 sm:gap-4 shrink-0">
-            <button 
-              onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)} 
+            <button
+              onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
               className="md:hidden p-2.5 text-gray-400 hover:text-white transition rounded-full hover:bg-white/5"
             >
               {isMobileSearchOpen ? <X size={20} /> : <Search size={20} />}
@@ -159,11 +171,11 @@ const Dashboard = () => {
                 <div className="w-9 h-9 rounded-full bg-blue-500/20 p-0.5 shrink-0 hover:scale-105 transition-transform">
                   <div className="w-full h-full rounded-full bg-blue-900 flex items-center justify-center text-sm font-bold text-white overflow-hidden">
                     {/* IMPLEMENTED CLOUDINARY SAFE LOADER */}
-                    {user.profilePictureUrl ? <img src={getImageUrl(user.profilePictureUrl)} className="w-full h-full object-cover" alt="Avatar"/> : user.name.charAt(0)}
+                    {user.profilePictureUrl ? <img src={getImageUrl(user.profilePictureUrl)} className="w-full h-full object-cover" alt="Avatar" /> : user.name.charAt(0)}
                   </div>
                 </div>
               </button>
-              
+
               {isProfileOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)}></div>
@@ -181,7 +193,7 @@ const Dashboard = () => {
         {isMobileSearchOpen && (
           <div className="md:hidden px-4 pb-4 animate-in slide-in-from-top-2">
             <div className="relative">
-              <input 
+              <input
                 type="text" placeholder="Search people, deals, events..." autoFocus value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && searchQuery.trim() && navigate(`/search?q=${encodeURIComponent(searchQuery)}`)}
                 className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-10 py-3 text-sm text-white focus:outline-none focus:border-blue-500/50"
@@ -193,7 +205,7 @@ const Dashboard = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8 relative z-10">
-        
+
         <div className="mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-[#0a0f1c] border border-white/5 p-6 md:p-10 rounded-2xl md:rounded-[2rem] relative overflow-hidden">
           <div className="relative z-10 w-full md:w-auto">
             <div className="text-emerald-400 font-mono text-[10px] tracking-[0.2em] mb-2 uppercase flex items-center gap-2">
@@ -209,12 +221,66 @@ const Dashboard = () => {
           </Link>
         </div>
 
+        {/* --- PHASE 5: THE MOMENTUM HUD --- */}
+        <div className="bg-gradient-to-br from-[#0a0f1c] to-black border border-white/10 rounded-3xl p-8 mb-8 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/5 rounded-full blur-[80px] pointer-events-none"></div>
+
+          <div className="flex flex-col lg:flex-row gap-8 items-center relative z-10">
+            {/* The Aggregate Score Ring */}
+            <div className="flex flex-col items-center shrink-0">
+              <div className="relative w-36 h-36 flex items-center justify-center mb-2">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle cx="72" cy="72" r="64" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+                  <circle cx="72" cy="72" r="64" stroke="currentColor" strokeWidth="8" fill="transparent"
+                    strokeDasharray="402"
+                    strokeDashoffset={402 - (402 * momentum.aggregateScore) / 100}
+                    className="text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)] transition-all duration-1000" />
+                </svg>
+                <div className="absolute flex flex-col items-center justify-center">
+                  {isMomentumLoading ? <Activity className="text-emerald-500 animate-pulse" /> : (
+                    <>
+                      <span className="text-4xl font-black text-white">{Math.round(momentum.aggregateScore)}</span>
+                      <span className="text-[9px] font-mono text-emerald-500 uppercase tracking-widest mt-1">Momentum</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+                <TrendingUp size={12} className={momentum.data.trend === 'Accelerating' ? 'text-emerald-400' : 'text-gray-400'} />
+                <span className="text-[10px] font-mono text-gray-300 uppercase tracking-wider">{momentum.data.trend}</span>
+              </div>
+            </div>
+
+            {/* The Metric Breakdown */}
+            <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+              {[
+                { label: 'Responsiveness', value: momentum.data.responsiveness, icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400' },
+                { label: 'Follow-Through', value: momentum.data.followThrough, icon: ShieldCheck, color: 'text-blue-400', bg: 'bg-blue-400' },
+                { label: 'Execution Volume', value: momentum.data.execution, icon: Target, color: 'text-emerald-400', bg: 'bg-emerald-400' },
+                { label: 'Network Participation', value: momentum.data.participation, icon: Activity, color: 'text-purple-400', bg: 'bg-purple-400' }
+              ].map((stat, idx) => (
+                <div key={idx} className="space-y-2">
+                  <div className="flex justify-between items-center text-xs font-bold">
+                    <span className="text-gray-400 flex items-center gap-2"><stat.icon size={14} className={stat.color} /> {stat.label}</span>
+                    <span className="text-white font-mono">{stat.value}<span className="text-gray-600">/100</span></span>
+                  </div>
+                  <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                    <div className={`h-full ${stat.bg} rounded-full transition-all duration-1000 relative`} style={{ width: `${Math.min(stat.value, 100)}%` }}>
+                      <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
           {[
-            { label: "Profile Views", value: analytics.weeklyProfileViews || "0", icon: <Eye size={16} className="text-blue-400"/>, trend: "Last 7 days", trendUp: true },
-            { label: "Project Traction", value: analytics.projectClicks || "0", icon: <MousePointerClick size={16} className="text-purple-400"/>, trend: "External Clicks", trendUp: true },
-            { label: "Mentor Interest", value: analytics.mentorshipRequests || "0", icon: <Users size={16} className="text-emerald-400"/>, trend: "Inbound Requests", trendUp: analytics.mentorshipRequests > 0 },
-            { label: "Active Deals", value: "2", icon: <Briefcase size={16} className="text-yellow-400"/>, trend: "In Negotiation", trendUp: true }
+            { label: "Profile Views", value: analytics.weeklyProfileViews || "0", icon: <Eye size={16} className="text-blue-400" />, trend: "Last 7 days", trendUp: true },
+            { label: "Project Traction", value: analytics.projectClicks || "0", icon: <MousePointerClick size={16} className="text-purple-400" />, trend: "External Clicks", trendUp: true },
+            { label: "Mentor Interest", value: analytics.mentorshipRequests || "0", icon: <Users size={16} className="text-emerald-400" />, trend: "Inbound Requests", trendUp: analytics.mentorshipRequests > 0 },
+            { label: "Active Deals", value: "2", icon: <Briefcase size={16} className="text-yellow-400" />, trend: "In Negotiation", trendUp: true }
           ].map((stat, i) => (
             <div key={i} className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex flex-col justify-between hover:bg-white/[0.04] transition">
               <div className="flex justify-between items-center mb-2">
@@ -230,9 +296,9 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
-          
+
           <div className="xl:col-span-2 order-2 xl:order-1">
-            
+
             {analytics.weeklyProfileViews > 0 && (
               <div className="mb-6 bg-gradient-to-r from-blue-900/30 to-purple-900/10 border border-blue-500/20 rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -250,12 +316,12 @@ const Dashboard = () => {
             <div className="flex justify-between items-end mb-4">
               <h2 className="text-base font-bold text-white tracking-wide">Workspaces</h2>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {systemModules.map((mod, index) => (
-                <Link 
-                  to={mod.path} 
-                  key={index} 
+                <Link
+                  to={mod.path}
+                  key={index}
                   className={`group relative bg-white/[0.02] border border-white/5 p-5 md:p-6 rounded-2xl transition-all hover:bg-white/[0.04] flex flex-col overflow-hidden ${mod.highlight ? 'ring-1 ring-blue-500/30' : ''}`}
                 >
                   <div className="flex justify-between items-start mb-3">
@@ -268,12 +334,12 @@ const Dashboard = () => {
                       </span>
                     )}
                   </div>
-                  
+
                   <h3 className="text-base font-bold text-white mb-1">{mod.title}</h3>
                   <p className="text-xs text-gray-400 leading-relaxed mb-4 line-clamp-2">
                     {mod.desc}
                   </p>
-                  
+
                   <div className="mt-auto flex items-center gap-1 text-[11px] font-bold text-blue-400 uppercase tracking-wider group-hover:text-blue-300 transition-colors">
                     Open Module <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
                   </div>
@@ -283,7 +349,7 @@ const Dashboard = () => {
           </div>
 
           <div className="space-y-6 order-1 xl:order-2">
-            
+
             <div className="bg-white/[0.02] border border-white/5 p-5 md:p-6 rounded-2xl">
               <div className="flex justify-between items-center mb-2">
                 <h2 className="text-sm font-bold text-white">Profile Setup</h2>

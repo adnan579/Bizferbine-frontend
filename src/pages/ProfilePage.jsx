@@ -16,25 +16,26 @@ const getImageUrl = (path) => {
 const ProfilePage = () => {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(''); 
-  
+  const [error, setError] = useState('');
+
   const [heatmapData, setHeatmapData] = useState([]);
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false); 
-  const [commandInput, setCommandInput] = useState(''); 
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [commandInput, setCommandInput] = useState('');
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isPortfolioOpen, setIsPortfolioOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isVideoOpen, setIsVideoOpen] = useState(false); 
-  
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+
   const [isSyntheticChatOpen, setIsSyntheticChatOpen] = useState(false);
   const [syntheticInput, setSyntheticInput] = useState('');
   const [syntheticChatLog, setSyntheticChatLog] = useState([]);
   const [isSyntheticLoading, setIsSyntheticLoading] = useState(false);
+  const [momentum, setMomentum] = useState(null);
 
   const navigate = useNavigate();
-  const { userId } = useParams(); 
-  
+  const { userId } = useParams();
+
   let loggedInUser = null;
   try {
     const userStr = localStorage.getItem('user');
@@ -51,12 +52,18 @@ const ProfilePage = () => {
       const data = await response.json();
       if (response.ok) setProfileData(data);
       else setError(data.message || 'Failed to load profile.');
-      
+
       // 🚀 REFACTORED: Unified GET request
       const hmRes = await apiClient.get(`/profile/${targetProfileId}/heatmap`);
       if (hmRes.ok) setHeatmapData(await hmRes.json());
-      
-    } catch (err) { setError('Server connection error.'); } 
+
+      // Fetch their public momentum score
+      apiClient.get(`/analytics/momentum/${targetProfileId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(mData => { if (mData) setMomentum(mData); })
+        .catch(err => console.error(err));
+
+    } catch (err) { setError('Server connection error.'); }
     finally { setLoading(false); }
   };
 
@@ -83,7 +90,7 @@ const ProfilePage = () => {
     try {
       // 🚀 REFACTORED: Unified POST request
       const res = await apiClient.post(`/network/follow/${targetProfileId}`);
-      if (res.ok) fetchProfile(); 
+      if (res.ok) fetchProfile();
     } catch (err) { console.error('Follow error', err); }
   };
 
@@ -92,21 +99,21 @@ const ProfilePage = () => {
       // 🚀 REFACTORED: Unified POST request
       const res = await apiClient.post(`/network/connect/${targetProfileId}`);
       const data = await res.json();
-      alert(data.message); 
+      alert(data.message);
     } catch (err) { console.error('Connect error', err); }
   };
 
   const trackOutboundClick = (eventType, metadata = {}) => {
-    if (isOwnProfile) return; 
+    if (isOwnProfile) return;
     // 🚀 REFACTORED: Unified POST request
     apiClient.post('/analytics/track', {
       body: JSON.stringify({ targetUser: targetProfileId, eventType, metadata })
-    }).catch(err => console.error('Analytics ping failed', err)); 
+    }).catch(err => console.error('Analytics ping failed', err));
   };
 
   const handleSyntheticSubmit = async (e) => {
     e.preventDefault();
-    if(!syntheticInput.trim()) return;
+    if (!syntheticInput.trim()) return;
 
     const newLog = [...syntheticChatLog, { sender: 'user', text: syntheticInput }];
     setSyntheticChatLog(newLog);
@@ -120,7 +127,7 @@ const ProfilePage = () => {
       });
       const data = await res.json();
       setSyntheticChatLog([...newLog, { sender: 'bot', text: data.reply || data.message }]);
-    } catch(err) {
+    } catch (err) {
       setSyntheticChatLog([...newLog, { sender: 'bot', text: "Connection to Synthetic Node severed." }]);
     } finally {
       setIsSyntheticLoading(false);
@@ -165,7 +172,7 @@ const ProfilePage = () => {
 
   const verifiedSkills = new Set(profileData?.verifiedSkills || []);
 
-  const last90Days = Array.from({length: 90}, (_, i) => {
+  const last90Days = Array.from({ length: 90 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (89 - i));
     return d.toISOString().split('T')[0];
@@ -187,13 +194,13 @@ const ProfilePage = () => {
       {isVideoOpen && profile?.pitchVideoUrl && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
           <div className="w-full max-w-sm bg-[#0a0f1c] border border-purple-500/30 rounded-3xl overflow-hidden relative shadow-[0_0_50px_rgba(147,51,234,0.3)] animate-in zoom-in-95">
-            <button onClick={() => setIsVideoOpen(false)} className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black p-2 rounded-full text-white transition"><X size={20}/></button>
+            <button onClick={() => setIsVideoOpen(false)} className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black p-2 rounded-full text-white transition"><X size={20} /></button>
             <video src={getImageUrl(profile.pitchVideoUrl)} controls autoPlay muted playsInline className="w-full h-full object-cover max-h-[70vh] block" />
             <div className="p-4 bg-[#0a0f1c] text-center border-t border-purple-500/20"><p className="text-xs font-bold text-purple-400 uppercase tracking-widest">Asynchronous Protocol Active</p></div>
           </div>
         </div>
       )}
-      
+
       {isSyntheticChatOpen && (
         <div className="fixed inset-0 z-[150] flex justify-center items-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in">
           <div className="w-full max-w-lg bg-[#0a0f1c] border border-cyan-500/30 rounded-3xl shadow-[0_0_50px_rgba(6,182,212,0.2)] p-6 md:p-8 flex flex-col h-[60vh] max-h-[80vh] animate-in zoom-in-95">
@@ -201,13 +208,13 @@ const ProfilePage = () => {
               <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
                 <Bot className="text-cyan-400" /> Synthetic Node: {profile?.name?.split(' ')[0] || 'Unknown'}
               </h2>
-              <button onClick={() => setIsSyntheticChatOpen(false)} className="text-gray-400 hover:text-white"><X size={20}/></button>
+              <button onClick={() => setIsSyntheticChatOpen(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
               {syntheticChatLog.length === 0 ? (
                 <div className="text-center text-gray-500 text-xs font-mono uppercase tracking-widest mt-10">
-                  Connection established.<br/>Ask about my experience, skills, or portfolio.
+                  Connection established.<br />Ask about my experience, skills, or portfolio.
                 </div>
               ) : (
                 syntheticChatLog.map((msg, i) => (
@@ -242,10 +249,10 @@ const ProfilePage = () => {
           <div className="w-full max-w-2xl bg-[#050810] border border-cyan-500/30 rounded-2xl shadow-[0_0_50px_rgba(34,211,238,0.15)] overflow-hidden">
             <div className="flex items-center px-4 py-3 border-b border-white/10 bg-black/50">
               <Terminal size={18} className="text-cyan-400 mr-3" />
-              <input 
+              <input
                 autoFocus
-                type="text" 
-                placeholder="Type a command... (e.g., /propose-deal, /request-barter, /ping)" 
+                type="text"
+                placeholder="Type a command... (e.g., /propose-deal, /request-barter, /ping)"
                 value={commandInput}
                 onChange={(e) => setCommandInput(e.target.value)}
                 className="flex-1 bg-transparent border-none text-white focus:outline-none font-mono text-sm placeholder-gray-600"
@@ -254,7 +261,7 @@ const ProfilePage = () => {
             </div>
             {commandInput && (
               <div className="p-2 bg-black/80">
-                <button 
+                <button
                   onClick={() => {
                     const cmd = commandInput.toLowerCase();
                     if (cmd.includes('/propose-deal')) navigate('/deals');
@@ -265,7 +272,7 @@ const ProfilePage = () => {
                   }}
                   className="w-full text-left px-4 py-3 hover:bg-cyan-900/30 text-sm text-cyan-300 font-mono rounded-xl transition flex items-center gap-2"
                 >
-                  <ArrowRight size={14}/> Execute: <span className="text-white">{commandInput}</span>
+                  <ArrowRight size={14} /> Execute: <span className="text-white">{commandInput}</span>
                 </button>
               </div>
             )}
@@ -288,7 +295,7 @@ const ProfilePage = () => {
       </nav>
 
       <header className="relative max-w-5xl mx-auto mt-4 md:mt-6 rounded-3xl overflow-visible border border-white/10 bg-[#0a0f1c] shadow-[0_0_40px_rgba(37,99,235,0.1)] mx-4 md:mx-auto print:border-black/10 print:shadow-none print:bg-white">
-        
+
         {isOwnProfile && (
           <div className="absolute top-4 right-4 z-20 flex items-center gap-2 md:gap-3 print:hidden">
             <button onClick={handleExportPDF} className="p-2 md:p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full transition shadow-[0_0_15px_rgba(37,99,235,0.4)]" title="Export PDF Pitch Deck">
@@ -320,25 +327,25 @@ const ProfilePage = () => {
         </div>
 
         <div className="px-5 md:px-8 pb-6 md:pb-8 relative -mt-16 md:-mt-20 flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 text-center md:text-left">
-          
-          <div className={`w-28 h-28 md:w-32 md:h-32 rounded-2xl bg-[#050810] p-1 z-10 shrink-0 relative overflow-hidden transition-all duration-500 ${staminaStatus === 'Peak' ? 'border-4 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]' : staminaStatus === 'Burnout' ? 'border-4 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.6)]' : 'border-2 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]'}`}>
-             {profile?.profilePictureUrl ? (
-               <img src={getImageUrl(profile.profilePictureUrl)} alt="Profile" className="w-full h-full object-cover rounded-xl" />
-             ) : (
-               <div className="w-full h-full bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-3xl md:text-4xl font-black text-white">
-                 {profile?.name ? profile.name.charAt(0).toUpperCase() : 'U'}
-               </div>
-             )}
 
-             {profile?.pitchVideoUrl && (
-               <button onClick={() => setIsVideoOpen(true)} className="absolute bottom-[-10px] right-[-10px] w-10 h-10 bg-purple-600 hover:bg-purple-500 rounded-full border-2 border-[#0a0f1c] flex items-center justify-center animate-pulse shadow-[0_0_20px_rgba(147,51,234,0.8)] z-20 print:hidden transition">
-                 <Play size={16} className="text-white fill-white ml-0.5" />
-               </button>
-             )}
+          <div className={`w-28 h-28 md:w-32 md:h-32 rounded-2xl bg-[#050810] p-1 z-10 shrink-0 relative overflow-hidden transition-all duration-500 ${staminaStatus === 'Peak' ? 'border-4 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]' : staminaStatus === 'Burnout' ? 'border-4 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.6)]' : 'border-2 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]'}`}>
+            {profile?.profilePictureUrl ? (
+              <img src={getImageUrl(profile.profilePictureUrl)} alt="Profile" className="w-full h-full object-cover rounded-xl" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-3xl md:text-4xl font-black text-white">
+                {profile?.name ? profile.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+            )}
+
+            {profile?.pitchVideoUrl && (
+              <button onClick={() => setIsVideoOpen(true)} className="absolute bottom-[-10px] right-[-10px] w-10 h-10 bg-purple-600 hover:bg-purple-500 rounded-full border-2 border-[#0a0f1c] flex items-center justify-center animate-pulse shadow-[0_0_20px_rgba(147,51,234,0.8)] z-20 print:hidden transition">
+                <Play size={16} className="text-white fill-white ml-0.5" />
+              </button>
+            )}
           </div>
 
           <div className="flex-1 mb-2 z-10 mt-2 w-full print:text-black">
-            
+
             {profile?.activeDirective && profile.activeDirective.intent !== 'None' && (
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/40 text-yellow-400 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3 shadow-[0_0_15px_rgba(234,179,8,0.2)] print:bg-yellow-100 print:text-yellow-800 print:border-yellow-300">
                 <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse print:animate-none"></span>
@@ -347,20 +354,37 @@ const ProfilePage = () => {
             )}
 
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-               <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight print:text-black">{profile?.name || 'Unknown User'}</h1>
-               <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                 {reputation.badges.map(badge => (
-                   <span key={badge} className="px-2 py-1 md:px-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest rounded-lg flex items-center gap-1">
-                     <ShieldCheck size={12} /> {badge}
-                   </span>
-                 ))}
-               </div>
+              <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight print:text-black">{profile?.name || 'Unknown User'}</h1>
+              <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                {reputation.badges.map(badge => (
+                  <span key={badge} className="px-2 py-1 md:px-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest rounded-lg flex items-center gap-1">
+                    <ShieldCheck size={12} /> {badge}
+                  </span>
+                ))}
+              </div>
             </div>
 
             {profile?.username && <p className="text-blue-500 font-mono text-sm tracking-widest mb-1 mt-1 print:text-blue-700">@{profile.username}</p>}
             <p className="text-gray-400 font-mono text-[9px] md:text-[10px] tracking-widest uppercase mt-2 mb-2 print:text-gray-600">{profile?.role || 'Network User'} • {profile?.industry || 'General'}</p>
             <p className="text-gray-300 text-sm md:text-lg max-w-2xl px-2 md:px-0 print:text-gray-800">{profile?.headline || 'Establishing system branding...'}</p>
-            
+
+            {/* PHASE 5: PUBLIC MOMENTUM BADGE */}
+            {momentum && (
+              <div className="mt-4 inline-flex items-center gap-4 bg-gradient-to-r from-emerald-900/40 to-black border border-emerald-500/30 px-5 py-2.5 rounded-xl">
+                <div className="flex items-center gap-2">
+                  <Activity className="text-emerald-400" size={18} />
+                  <span className="text-sm font-black text-white tracking-wider">MOMENTUM INDEX</span>
+                </div>
+                <div className="h-4 w-px bg-emerald-500/30"></div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-black text-emerald-400">{Math.round(momentum.aggregateScore)}</span>
+                  <span className="text-[10px] font-mono text-gray-400 uppercase">/ 100</span>
+                </div>
+                <div className="h-4 w-px bg-emerald-500/30"></div>
+                <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded uppercase tracking-widest">{momentum.data.trend}</span>
+              </div>
+            )}
+
             {!isOwnProfile && mutualConnections.length > 0 && (
               <div className="w-full md:w-80 h-64 mt-5 mb-2 print:hidden rounded-2xl border border-cyan-500/20 bg-[#050810] overflow-hidden relative shadow-[0_0_20px_rgba(34,211,238,0.15)] cursor-move">
                 <div className="absolute top-3 left-3 z-10 text-[9px] font-mono text-cyan-400 uppercase tracking-widest bg-cyan-900/30 border border-cyan-500/30 px-2 py-1 rounded shadow-lg pointer-events-none flex items-center gap-1">
@@ -384,7 +408,7 @@ const ProfilePage = () => {
 
             {!isOwnProfile && (
               <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-2 md:gap-3 mt-5 w-full print:hidden">
-                
+
                 {profile?.role === 'Mentor' && (
                   <Link to={`/mentorship`} className="w-full md:w-auto flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition shadow-[0_0_15px_rgba(147,51,234,0.4)]">
                     <Award size={16} /> Request Mentorship
@@ -395,7 +419,7 @@ const ProfilePage = () => {
                     <Handshake size={16} /> Propose Deal
                   </Link>
                 )}
-                
+
                 <button onClick={handleFollowToggle} className={`w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition ${isFollowing ? 'bg-white/10 text-white hover:bg-red-500/20 hover:text-red-400 border border-white/10' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]'}`}>
                   <UserPlus size={16} /> {isFollowing ? 'Unfollow' : 'Follow Node'}
                 </button>
@@ -410,23 +434,23 @@ const ProfilePage = () => {
           </div>
 
           <div className="mt-4 md:mt-0 z-10 shrink-0 flex flex-wrap justify-center gap-4 w-full md:w-auto">
-            
+
             <div className="bg-black/50 border border-emerald-500/30 p-4 rounded-2xl flex flex-col items-center justify-center min-w-[120px] shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-               <div className="text-[10px] font-mono text-emerald-500/70 uppercase tracking-widest mb-2">Escrow TVL</div>
-               <div className="text-xl font-black text-emerald-400 font-mono tracking-wider">${escrowTVL.toLocaleString()}</div>
-               <div className="text-[9px] text-emerald-500/50 uppercase tracking-widest mt-2 flex items-center gap-1"><ShieldCheck size={10} className="text-emerald-400" /> Secured</div>
+              <div className="text-[10px] font-mono text-emerald-500/70 uppercase tracking-widest mb-2">Escrow TVL</div>
+              <div className="text-xl font-black text-emerald-400 font-mono tracking-wider">${escrowTVL.toLocaleString()}</div>
+              <div className="text-[9px] text-emerald-500/50 uppercase tracking-widest mt-2 flex items-center gap-1"><ShieldCheck size={10} className="text-emerald-400" /> Secured</div>
             </div>
 
             <div className="bg-black/50 border border-white/10 p-4 rounded-2xl flex flex-col items-center min-w-[120px]">
-               <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-2">Reputation Index</div>
-               <div className="relative w-16 h-16 flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90">
-                     <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/5 print:text-gray-200" />
-                     <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray="175" strokeDashoffset={175 - (175 * reputation.score) / 100} className="text-blue-500 transition-all duration-1000" />
-                  </svg>
-                  <span className="absolute text-xl font-black text-white print:text-black">{reputation.score}</span>
-               </div>
-               <div className="text-[9px] text-blue-400 uppercase tracking-widest mt-2">Global Standing</div>
+              <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-2">Reputation Index</div>
+              <div className="relative w-16 h-16 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/5 print:text-gray-200" />
+                  <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray="175" strokeDashoffset={175 - (175 * reputation.score) / 100} className="text-blue-500 transition-all duration-1000" />
+                </svg>
+                <span className="absolute text-xl font-black text-white print:text-black">{reputation.score}</span>
+              </div>
+              <div className="text-[9px] text-blue-400 uppercase tracking-widest mt-2">Global Standing</div>
             </div>
           </div>
         </div>
@@ -449,7 +473,7 @@ const ProfilePage = () => {
 
       <main className="max-w-5xl mx-auto mt-6 md:mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 px-4 md:px-0">
         <div className="space-y-6 md:space-y-8">
-          
+
           <section className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-5 md:p-6 flex flex-col">
             <h2 className="text-white font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-[10px] font-mono text-gray-500">
               <Briefcase size={14} className="text-blue-400" /> Identity Bio
@@ -460,7 +484,7 @@ const ProfilePage = () => {
                 <MapPin size={14} className="text-purple-400 shrink-0" /> {profile.location}
               </div>
             )}
-            
+
             {isOwnProfile && (
               <div className="mt-6 pt-6 border-t border-white/5">
                 <Link to="/analytics" className="w-full bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.1)] hover:shadow-[0_0_20px_rgba(37,99,235,0.3)]">
@@ -476,15 +500,15 @@ const ProfilePage = () => {
             </h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400 flex items-center gap-2"><ArrowRightLeft size={14} className="text-cyan-400"/> Barters Completed</span>
+                <span className="text-gray-400 flex items-center gap-2"><ArrowRightLeft size={14} className="text-cyan-400" /> Barters Completed</span>
                 <span className="font-bold text-white print:text-black">{verifiedExecution.bartersCompleted}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400 flex items-center gap-2"><Award size={14} className="text-purple-400"/> Mentorships Completed</span>
+                <span className="text-gray-400 flex items-center gap-2"><Award size={14} className="text-purple-400" /> Mentorships Completed</span>
                 <span className="font-bold text-white print:text-black">{verifiedExecution.mentorshipsCompleted}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400 flex items-center gap-2"><MapPin size={14} className="text-yellow-400"/> Events Hosted</span>
+                <span className="text-gray-400 flex items-center gap-2"><MapPin size={14} className="text-yellow-400" /> Events Hosted</span>
                 <span className="font-bold text-white print:text-black">{verifiedExecution.eventsHosted}</span>
               </div>
             </div>
@@ -496,18 +520,18 @@ const ProfilePage = () => {
             </h2>
             <div className="flex gap-1 flex-wrap justify-start">
               {last90Days.map((date, i) => {
-                 const count = heatmapData.find(d => d.date === date)?.count || 0;
-                 const color = count > 3 ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 
-                               count > 1 ? 'bg-cyan-600' : 
-                               count > 0 ? 'bg-cyan-900/50 border border-cyan-700/50' : 
-                               'bg-white/5 border border-white/5';
-                 return (
-                   <div 
-                     key={date} 
-                     title={`${count} executions on ${date}`} 
-                     className={`w-3.5 h-3.5 md:w-4 md:h-4 rounded-sm transition-colors hover:border-white ${color}`}
-                   ></div>
-                 );
+                const count = heatmapData.find(d => d.date === date)?.count || 0;
+                const color = count > 3 ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]' :
+                  count > 1 ? 'bg-cyan-600' :
+                    count > 0 ? 'bg-cyan-900/50 border border-cyan-700/50' :
+                      'bg-white/5 border border-white/5';
+                return (
+                  <div
+                    key={date}
+                    title={`${count} executions on ${date}`}
+                    className={`w-3.5 h-3.5 md:w-4 md:h-4 rounded-sm transition-colors hover:border-white ${color}`}
+                  ></div>
+                );
               })}
             </div>
           </section>
@@ -518,7 +542,7 @@ const ProfilePage = () => {
             </h2>
             <div className="flex flex-wrap gap-2">
               {profile?.skills?.length > 0 ? profile.skills.map((skill, index) => {
-                const isVerified = verifiedSkills.has(skill); 
+                const isVerified = verifiedSkills.has(skill);
                 return (
                   <span key={index} className={`px-3 py-1.5 border rounded-lg text-[10px] font-mono uppercase tracking-tighter flex items-center gap-1.5 ${isVerified ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.2)]' : 'bg-black border-white/10 text-gray-300'}`}>
                     {isVerified && <ShieldCheck size={12} className="text-yellow-400" />}
@@ -575,23 +599,23 @@ const ProfilePage = () => {
               </h2>
               <div className="space-y-4 mt-2">
                 {profile.socialLinks.website && (
-                  <a href={profile.socialLinks.website} target="_blank" rel="noreferrer" 
-                     onClick={() => trackOutboundClick('WEBSITE_CLICK', { url: profile.socialLinks.website })}
-                     className="flex items-center gap-3 text-sm text-gray-300 hover:text-emerald-400 transition group break-all print:text-blue-600">
+                  <a href={profile.socialLinks.website} target="_blank" rel="noreferrer"
+                    onClick={() => trackOutboundClick('WEBSITE_CLICK', { url: profile.socialLinks.website })}
+                    className="flex items-center gap-3 text-sm text-gray-300 hover:text-emerald-400 transition group break-all print:text-blue-600">
                     <LinkIcon size={16} className="text-gray-500 group-hover:text-emerald-400 transition shrink-0" /> Personal Website
                   </a>
                 )}
                 {profile.socialLinks.linkedIn && (
-                  <a href={profile.socialLinks.linkedIn} target="_blank" rel="noreferrer" 
-                     onClick={() => trackOutboundClick('LINKEDIN_CLICK', { url: profile.socialLinks.linkedIn })}
-                     className="flex items-center gap-3 text-sm text-gray-300 hover:text-blue-400 transition group break-all print:text-blue-600">
+                  <a href={profile.socialLinks.linkedIn} target="_blank" rel="noreferrer"
+                    onClick={() => trackOutboundClick('LINKEDIN_CLICK', { url: profile.socialLinks.linkedIn })}
+                    className="flex items-center gap-3 text-sm text-gray-300 hover:text-blue-400 transition group break-all print:text-blue-600">
                     <Users size={16} className="text-gray-500 group-hover:text-blue-400 transition shrink-0" /> LinkedIn Profile
                   </a>
                 )}
                 {profile.socialLinks.github && (
-                  <a href={profile.socialLinks.github} target="_blank" rel="noreferrer" 
-                     onClick={() => trackOutboundClick('GITHUB_CLICK', { url: profile.socialLinks.github })}
-                     className="flex items-center gap-3 text-sm text-gray-300 hover:text-purple-400 transition group break-all print:text-blue-600">
+                  <a href={profile.socialLinks.github} target="_blank" rel="noreferrer"
+                    onClick={() => trackOutboundClick('GITHUB_CLICK', { url: profile.socialLinks.github })}
+                    className="flex items-center gap-3 text-sm text-gray-300 hover:text-purple-400 transition group break-all print:text-blue-600">
                     <Code size={16} className="text-gray-500 group-hover:text-purple-400 transition shrink-0" /> GitHub Repository
                   </a>
                 )}
@@ -603,39 +627,39 @@ const ProfilePage = () => {
 
         <div className="lg:col-span-2 space-y-6 md:space-y-8">
           <section className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-5 md:p-8 relative overflow-hidden print:border-black/10 print:bg-white print:shadow-none">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-[50px] pointer-events-none"></div>
-             <div className="flex justify-between items-center mb-6 md:mb-8 relative z-10">
-               <h2 className="text-white font-bold flex items-center gap-2 uppercase tracking-widest text-[10px] font-mono text-gray-500 print:text-black"><Award size={14} className="text-blue-400" /> High-Impact Portfolio</h2>
-               {isOwnProfile && <button onClick={() => setIsPortfolioOpen(true)} className="text-[9px] md:text-[10px] font-mono text-blue-400 hover:text-blue-300 uppercase tracking-widest border border-blue-500/30 px-3 py-1.5 rounded-full hover:bg-blue-500/10 transition">+ Deploy</button>}
-             </div>
-            
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-[50px] pointer-events-none"></div>
+            <div className="flex justify-between items-center mb-6 md:mb-8 relative z-10">
+              <h2 className="text-white font-bold flex items-center gap-2 uppercase tracking-widest text-[10px] font-mono text-gray-500 print:text-black"><Award size={14} className="text-blue-400" /> High-Impact Portfolio</h2>
+              {isOwnProfile && <button onClick={() => setIsPortfolioOpen(true)} className="text-[9px] md:text-[10px] font-mono text-blue-400 hover:text-blue-300 uppercase tracking-widest border border-blue-500/30 px-3 py-1.5 rounded-full hover:bg-blue-500/10 transition">+ Deploy</button>}
+            </div>
+
             {profile?.portfolio && profile.portfolio.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 {profile.portfolio.map((item, index) => (
                   <div key={item._id || index} className="bg-black border border-white/5 rounded-2xl overflow-hidden group flex flex-col relative hover:border-blue-500/30 transition-colors print:border-black/10 print:bg-gray-50">
                     {isOwnProfile && <button onClick={() => handleDeletePortfolio(item._id)} className="absolute top-2 right-2 p-2 bg-black/60 text-gray-400 hover:text-red-400 rounded-full transition z-20 md:opacity-0 md:group-hover:opacity-100"><Trash2 size={16} /></button>}
-                    
+
                     {/* IMPLEMENTED CLOUDINARY SAFE LOADER */}
                     {item.imageUrl ? <div className="h-32 w-full overflow-hidden border-b border-white/5"><img src={getImageUrl(item.imageUrl)} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div> : <div className="h-2 w-full bg-gradient-to-r from-blue-600 to-indigo-600"></div>}
                     <div className="p-5 flex-1 flex flex-col">
                       <h3 className="text-lg font-bold text-white mb-2 print:text-black">{item.title}</h3>
                       <p className="text-sm text-gray-400 mb-4 print:text-gray-700">{item.solution}</p>
-                      
+
                       {item.result && <div className="mt-auto mb-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs p-3 rounded-lg font-mono">🚀 Impact: {item.result}</div>}
-                      
+
                       <div className="flex gap-3 text-xs mt-auto print:hidden">
                         {item.projectUrl && (
-                          <a href={item.projectUrl} target="_blank" rel="noreferrer" 
-                             onClick={() => trackOutboundClick('PORTFOLIO_CLICK', { portfolioId: item._id, url: item.projectUrl })}
-                             className="flex items-center gap-1 text-blue-400 hover:underline">
-                            <ExternalLink size={12}/> Live Link
+                          <a href={item.projectUrl} target="_blank" rel="noreferrer"
+                            onClick={() => trackOutboundClick('PORTFOLIO_CLICK', { portfolioId: item._id, url: item.projectUrl })}
+                            className="flex items-center gap-1 text-blue-400 hover:underline">
+                            <ExternalLink size={12} /> Live Link
                           </a>
                         )}
                         {item.githubUrl && (
-                          <a href={item.githubUrl} target="_blank" rel="noreferrer" 
-                             onClick={() => trackOutboundClick('GITHUB_CLICK', { portfolioId: item._id, url: item.githubUrl })}
-                             className="flex items-center gap-1 text-purple-400 hover:underline">
-                            <Code size={12}/> Source Code
+                          <a href={item.githubUrl} target="_blank" rel="noreferrer"
+                            onClick={() => trackOutboundClick('GITHUB_CLICK', { portfolioId: item._id, url: item.githubUrl })}
+                            className="flex items-center gap-1 text-purple-400 hover:underline">
+                            <Code size={12} /> Source Code
                           </a>
                         )}
                       </div>
@@ -647,15 +671,15 @@ const ProfilePage = () => {
           </section>
 
           <section className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-5 md:p-8 print:border-black/10 print:bg-white">
-             <h2 className="text-white font-bold mb-6 flex items-center gap-2 uppercase tracking-widest text-[10px] font-mono text-gray-500 print:text-black"><Zap size={14} className="text-yellow-400" /> Thought Leadership</h2>
-            
+            <h2 className="text-white font-bold mb-6 flex items-center gap-2 uppercase tracking-widest text-[10px] font-mono text-gray-500 print:text-black"><Zap size={14} className="text-yellow-400" /> Thought Leadership</h2>
+
             {thoughtLeadershipFeed.length > 0 ? (
               <div className="space-y-6">
                 {thoughtLeadershipFeed.map((insight) => {
                   return (
                     <div key={insight._id} className="bg-black border border-white/5 rounded-2xl p-5 relative group print:border-black/10 print:bg-gray-50">
                       {isOwnProfile && <button onClick={() => handleDeleteInsight(insight._id)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-red-400 md:opacity-0 md:group-hover:opacity-100 transition z-20 bg-black/40 rounded-full"><Trash2 size={16} /></button>}
-                      
+
                       {/* IMPLEMENTED CLOUDINARY SAFE LOADER */}
                       {insight.imageUrl && <img src={getImageUrl(insight.imageUrl)} alt="Insight" className="w-full h-40 object-cover rounded-xl mb-4" />}
                       <h3 className="text-md font-bold text-white mb-2 pr-10 print:text-black">{insight.title}</h3>

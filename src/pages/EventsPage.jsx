@@ -549,15 +549,26 @@ const EventsPage = () => {
                           <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">{attendee.user?.role}</p>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
-                          <MessageSquare size={14} /> Request Intro
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        <button
+                          onClick={() => handleExecuteIntent(attendee.user._id, 'Offer Partnership')}
+                          disabled={executingIntent === attendee.user._id}
+                          className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
+                          {executingIntent === attendee.user._id ? <Loader2 size={14} className="animate-spin" /> : <><MessageSquare size={14} /> Request Intro</>}
                         </button>
-                        <button className="flex-1 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
-                          <CalendarDays size={14} /> Book 15min Sync
+
+                        <button
+                          onClick={() => handleExecuteIntent(attendee.user._id, 'Build Sprint')}
+                          disabled={executingIntent === attendee.user._id}
+                          className="flex-1 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
+                          {executingIntent === attendee.user._id ? <Loader2 size={14} className="animate-spin" /> : <><CalendarDays size={14} /> Book Sync</>}
                         </button>
-                        <button onClick={() => navigate('/deals')} className="flex-1 bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
-                          <Briefcase size={14} /> Compile Workspace
+
+                        <button
+                          onClick={() => handleExecuteIntent(attendee.user._id, 'Create Deal Room')}
+                          disabled={executingIntent === attendee.user._id}
+                          className="flex-1 bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
+                          {executingIntent === attendee.user._id ? <Loader2 size={14} className="animate-spin" /> : <><Briefcase size={14} /> Compile Workspace</>}
                         </button>
                       </div>
                     </div>
