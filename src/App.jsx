@@ -15,10 +15,9 @@ import DealsPage from './pages/DealsPage';
 import EventsPage from './pages/EventsPage';
 import MessagesPage from './pages/MessagesPage';
 import NetworkPage from './pages/NetworkPage';
-// import SkillExchangePage from './pages/SkillExchangePage';
-// import BarterWorkspacePage from './pages/BarterWorkspacePage';
-// import WellnessCornerPage from './pages/WellnessCornerPage';
 import MentorshipPage from './pages/MentorshipPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
@@ -60,9 +59,8 @@ function App() {
           <Route path="/events" element={<EventsPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/network" element={<NetworkPage />} />
-          {/* <Route path="/skill-exchange" element={<SkillExchangePage />} /> */}
-          {/* <Route path="/barter-workspace" element={<BarterWorkspacePage />} /> */}
-          {/* <Route path="/wellness-corner" element={<WellnessCornerPage />} /> */}
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/mentorship" element={<MentorshipPage />} />
           <Route path="/admin" element={<AdminPanelPage />} />
           <Route path="/admin-login" element={<AdminLoginPage />} />

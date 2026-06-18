@@ -38,8 +38,10 @@ const LandingPage = () => {
           </div>
 
           <div className="hidden md:flex space-x-8 items-center">
-            <a href="#features" className="text-sm font-medium text-gray-400 hover:text-white transition">Features</a>
-            <a href="#how-it-works" className="text-sm font-medium text-gray-400 hover:text-white transition">How it Works</a>
+            <Link to="/network" className="text-sm font-medium text-gray-400 hover:text-white transition">Network</Link>
+            <Link to="/deals" className="text-sm font-medium text-gray-400 hover:text-white transition">Deal Rooms</Link>
+            <Link to="/mentorship" className="text-sm font-medium text-gray-400 hover:text-white transition">Mentorship</Link>
+            <Link to="/events" className="text-sm font-medium text-gray-400 hover:text-white transition">Events</Link>
             <Link to="/login" className="text-sm font-semibold text-gray-300 hover:text-white transition">Sign In</Link>
             <Link to="/register" className="text-sm font-bold bg-white text-black px-6 py-2.5 rounded-full hover:bg-gray-200 transition shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-105">
               Get Started
@@ -58,9 +60,11 @@ const LandingPage = () => {
 
         {isMobileMenuOpen && (
           <div className="md:hidden absolute top-full left-0 w-full bg-[#050810] border-b border-white/5 p-4 flex flex-col gap-4 shadow-xl">
-            <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 font-medium p-2">Features</a>
-            <a href="#how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 font-medium p-2">How it Works</a>
-            <Link to="/login" className="text-gray-300 font-medium p-2">Sign In</Link>
+            <Link to="/network" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 font-medium p-2">Network</Link>
+            <Link to="/deals" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 font-medium p-2">Deal Rooms</Link>
+            <Link to="/mentorship" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 font-medium p-2">Mentorship</Link>
+            <Link to="/events" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 font-medium p-2">Events</Link>
+            <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-300 font-medium p-2">Sign In</Link>
             <Link to="/register" className="bg-blue-600 text-white text-center font-bold px-6 py-3 rounded-xl mt-2">Get Started</Link>
           </div>
         )}
@@ -76,7 +80,7 @@ const LandingPage = () => {
           </div>
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.1] mb-6">
-            An elite premium network built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">cross-border business founders</span>, explicit trade deal rooms, and formal organizational clubs.
+            The premier software engine for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">global founders, venture developers, and international deal makers</span> looking to trade across borders.
           </h1>
 
           <p className="text-base md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
