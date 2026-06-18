@@ -13,18 +13,17 @@ const LandingPage = () => {
     { icon: "💼", title: "Secure Deal Rooms", desc: "Pitch investors and manage financial proposals in a private, encrypted environment." },
     { icon: "🤝", title: "Real-Time Networking", desc: "Instantly connect with founders and follow professional profiles." },
     { icon: "⚡", title: "Micro-Blog Publishing", desc: "Share thought leadership and case studies with a targeted professional audience." },
-    { icon: "🔍", title: "Global Discovery", desc: "Search across users, events, and skill barters simultaneously with our high-speed engine." },
+    { icon: "🔍", title: "Global Discovery", desc: "Search across users, events, and deal rooms simultaneously with our high-speed engine." },
     { icon: "🎟️", title: "Integrated Payments", desc: "Monetize events, sell tickets, and manage safe transactions effortlessly." },
-    { icon: "🔄", title: "Skill Barter Marketplace", desc: "Trade professional skills with other founders without spending cash." },
     { icon: "🏢", title: "Digital Events", desc: "Host, manage, and promote online or offline networking events." },
     { icon: "💬", title: "Encrypted Messaging", desc: "Communicate securely with private, low-latency direct messaging." }
   ];
 
-  const backendFlexTech = ['Node.js', 'Express.js', 'MongoDB Atlas', 'Regex Matchmaking', 'Parallel Queries', 'Barter Logic', 'CORS Security', 'JWT Auth', 'Bcrypt Encryption', 'AWS Architecture', 'Razorpay Gateway', 'WebSockets'];
+  const backendFlexTech = ['Node.js', 'Express.js', 'MongoDB Atlas', 'Regex Matchmaking', 'Parallel Queries', 'CORS Security', 'JWT Auth', 'Bcrypt Encryption', 'AWS Architecture', 'Razorpay Gateway', 'WebSockets'];
 
   return (
     <div className="min-h-screen bg-[#020408] text-gray-200 font-sans selection:bg-blue-500/30">
-      
+
       {/* THE MODAL COMPONENT */}
       <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} />
 
@@ -33,9 +32,9 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="text-xl md:text-2xl font-black tracking-tighter text-white flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(79,70,229,0.5)]">
-              <span className="text-white font-bold text-sm">BF</span>
+              <span className="text-white font-bold text-sm">Bz</span>
             </div>
-            BizFerbine
+            Bizzua
           </div>
 
           <div className="hidden md:flex space-x-8 items-center">
@@ -47,7 +46,7 @@ const LandingPage = () => {
             </Link>
           </div>
 
-          <button 
+          <button
             className="md:hidden text-white p-2"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
@@ -75,15 +74,15 @@ const LandingPage = () => {
           <div className="inline-block mb-6 px-4 py-1.5 rounded-full border border-blue-500/20 bg-blue-500/10 text-blue-400 text-xs md:text-sm font-bold tracking-widest uppercase">
             The Ultimate Networking Ecosystem
           </div>
-          
+
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.1] mb-6">
-            Connecting founders, mentors, and investors with <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">AI matchmaking.</span>
+            An elite premium network built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">cross-border business founders</span>, explicit trade deal rooms, and formal organizational clubs.
           </h1>
-          
+
           <p className="text-base md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Secure deal rooms, smart skill barter systems, event networking, and professional discovery — all in one unified platform.
+            Access high-value networking, secure deal pipelines, mentorship matches, and global events — all in one unified platform.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row justify-center gap-4 w-full sm:w-auto">
             <Link to="/register" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl md:rounded-full text-base md:text-lg font-bold transition shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center justify-center">
               Start Building Your Network
@@ -121,10 +120,10 @@ const LandingPage = () => {
       <section id="how-it-works" className="py-20 md:py-32 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">How BizFerbine Works</h2>
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">How Bizzua Works</h2>
             <p className="text-gray-400 text-lg">Three steps to accelerate your professional growth.</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             <div className="bg-[#050810] border border-white/5 p-8 rounded-2xl text-center relative z-10">
               <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center text-xl font-black mx-auto mb-6">1</div>
@@ -139,7 +138,7 @@ const LandingPage = () => {
             <div className="bg-[#050810] border border-white/5 p-8 rounded-2xl text-center relative z-10">
               <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center text-xl font-black mx-auto mb-6">3</div>
               <h3 className="text-xl font-bold text-white mb-3">Collaborate Securely</h3>
-              <p className="text-gray-400 text-sm">Open secure deal rooms, barter skills, or direct message your new connections.</p>
+              <p className="text-gray-400 text-sm">Open secure deal rooms, organize formal events, or direct message your new connections.</p>
             </div>
           </div>
         </div>
@@ -151,7 +150,7 @@ const LandingPage = () => {
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Everything you need to scale</h2>
             <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto">Powerful tools designed specifically for the modern startup ecosystem.</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {features.map((feature, index) => (
               <div key={index} className="bg-[#050810] border border-white/5 p-6 md:p-8 rounded-2xl hover:bg-white/5 transition-colors group">
@@ -185,17 +184,17 @@ const LandingPage = () => {
       <footer className="border-t border-white/5 bg-[#050810] pt-20 pb-10">
         <div className="max-w-4xl mx-auto text-center px-6 mb-20">
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Ready to expand your network?</h2>
-          <p className="text-gray-400 mb-8 max-w-xl mx-auto">Join thousands of professionals already building their future on BizFerbine.</p>
-          
+          <p className="text-gray-400 mb-8 max-w-xl mx-auto">Join thousands of professionals already building their future on Bizzua.</p>
+
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 w-full">
             <Link to="/register" className="w-full sm:w-auto inline-block bg-white text-black hover:bg-gray-200 px-10 py-4 rounded-xl md:rounded-full text-base md:text-lg font-bold transition shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:scale-105">
               Create Free Account
             </Link>
-            
+
             {/* NEW: THE RAZORPAY / SPONSOR BUTTON */}
-            <a 
+            <a
               href="https://rzp.io/l/your_generated_link" // Replace with your actual Razorpay link!
-              target="_blank" 
+              target="_blank"
               rel="noreferrer"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl md:rounded-full text-base md:text-lg font-bold shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all hover:scale-105"
             >
@@ -203,18 +202,18 @@ const LandingPage = () => {
             </a>
           </div>
         </div>
-        
+
         <div className="max-w-7xl mx-auto px-6 border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-6 text-xs md:text-sm text-gray-500">
           <div className="flex items-center gap-2 font-bold text-gray-400">
-            <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center text-white text-[10px]">BF</div>
-            BizFerbine © {new Date().getFullYear()}
+            <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center text-white text-[10px]">Bz</div>
+            Bizzua © {new Date().getFullYear()}
           </div>
           <div className="flex flex-wrap justify-center gap-6">
             <a href="#" className="hover:text-white transition">Privacy Policy</a>
             <a href="#" className="hover:text-white transition">Terms of Service</a>
             {/* NEW: LEAVE A FEEDBACK BUTTON */}
-            <button 
-              onClick={() => setIsFeedbackModalOpen(true)} 
+            <button
+              onClick={() => setIsFeedbackModalOpen(true)}
               className="hover:text-white transition text-blue-400 font-bold"
             >
               Leave A Feedback

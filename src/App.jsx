@@ -12,12 +12,12 @@ import ProfilePage from './pages/ProfilePage';
 import InsightsPage from './pages/InsightsPage';
 import SearchPage from './pages/SearchPage';
 import DealsPage from './pages/DealsPage';
-import EventsPage from './pages/EventsPage'; 
+import EventsPage from './pages/EventsPage';
 import MessagesPage from './pages/MessagesPage';
 import NetworkPage from './pages/NetworkPage';
-import SkillExchangePage from './pages/SkillExchangePage';
-import BarterWorkspacePage from './pages/BarterWorkspacePage';
-import WellnessCornerPage from './pages/WellnessCornerPage';
+// import SkillExchangePage from './pages/SkillExchangePage';
+// import BarterWorkspacePage from './pages/BarterWorkspacePage';
+// import WellnessCornerPage from './pages/WellnessCornerPage';
 import MentorshipPage from './pages/MentorshipPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import AdminLoginPage from './pages/AdminLoginPage';
@@ -29,7 +29,7 @@ import ResetPassword from './pages/ResetPassword';
 
 function App() {
 
-// --- NEW: GLOBAL WEBSOCKET LISTENER ---
+  // --- NEW: GLOBAL WEBSOCKET LISTENER ---
   useEffect(() => {
     // Connect to the backend
     const socket = io('https://bizferbine-backend.onrender.com');
@@ -52,7 +52,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/dashboard" element={<Dashboard />} /> 
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile/:userId?" element={<ProfilePage />} />
           <Route path="/insights" element={<InsightsPage />} />
           <Route path="/search" element={<SearchPage />} />
@@ -60,9 +60,9 @@ function App() {
           <Route path="/events" element={<EventsPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/network" element={<NetworkPage />} />
-          <Route path="/skill-exchange" element={<SkillExchangePage />} />
-          <Route path="/barter-workspace" element={<BarterWorkspacePage />} />
-          <Route path="/wellness-corner" element={<WellnessCornerPage />} />
+          {/* <Route path="/skill-exchange" element={<SkillExchangePage />} /> */}
+          {/* <Route path="/barter-workspace" element={<BarterWorkspacePage />} /> */}
+          {/* <Route path="/wellness-corner" element={<WellnessCornerPage />} /> */}
           <Route path="/mentorship" element={<MentorshipPage />} />
           <Route path="/admin" element={<AdminPanelPage />} />
           <Route path="/admin-login" element={<AdminLoginPage />} />

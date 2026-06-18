@@ -1,7 +1,7 @@
 // src/pages/DealsPage.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Briefcase, ChevronLeft, ShieldCheck, Send, Plus, DollarSign, CheckCircle2, XCircle, Clock, FileText, Trash2, Share2, Paperclip, AlertCircle, ShieldAlert } from 'lucide-react';
+import { Briefcase, ChevronLeft, ShieldCheck, Send, Plus, DollarSign, CheckCircle2, XCircle, Clock, FileText, Trash2, Share2, Paperclip, AlertCircle, ShieldAlert, Download, MessageSquare, Handshake, Check } from 'lucide-react';
 import { useAutonomicGovernor } from '../hooks/useAutonomicGovernor';
 import apiClient from '../utils/apiClient';
 
@@ -9,11 +9,13 @@ const DealsPage = () => {
   const [deals, setDeals] = useState([]);
   const [activeDeal, setActiveDeal] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+  const [activeTab, setActiveTab] = useState('All');
+  const [panelTab, setPanelTab] = useState('Overview');
+
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createError, setCreateError] = useState('');
-  const [newDealForm, setNewDealForm] = useState({ title: '', description: '', targetParticipantId: '' });
-  
+  const [newDealForm, setNewDealForm] = useState({ title: '', type: 'Partnership', amount: '', description: '', targetParticipantId: '' });
+
   const [proposalMsg, setProposalMsg] = useState('');
   const [proposalAmt, setProposalAmt] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -34,12 +36,12 @@ const DealsPage = () => {
       if (response.ok) {
         const data = await response.json();
         setDeals(data);
-        if (activeDeal) {
+        if (activeDeal && data) {
           const updatedActive = data.find(d => d._id === activeDeal._id);
           if (updatedActive) setActiveDeal(updatedActive);
         }
       }
-    } catch (err) { console.error(err); } 
+    } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
 
@@ -53,17 +55,20 @@ const DealsPage = () => {
     e.preventDefault();
     setCreateError('');
     try {
+      const submissionData = { ...newDealForm };
+      if (newDealForm.amount) submissionData.description = `[Proposed Value: $${newDealForm.amount}] ` + submissionData.description;
+
       const response = await apiClient.post('/deals', {
-        body: JSON.stringify(newDealForm)
+        body: JSON.stringify(submissionData)
       });
       const data = await response.json();
-      
+
       if (response.ok) {
         setIsCreateOpen(false);
-        setNewDealForm({ title: '', description: '', targetParticipantId: '' });
-        fetchDeals(); 
+        setNewDealForm({ title: '', type: 'Partnership', amount: '', description: '', targetParticipantId: '' });
+        fetchDeals();
       } else {
-        setCreateError(data.message); // Displays the "Invalid ID" error!
+        setCreateError(data.message);
       }
     } catch (err) { setCreateError("Server Connection Error."); }
   };
@@ -78,7 +83,7 @@ const DealsPage = () => {
         body: JSON.stringify({ message: proposalMsg, amount: Number(proposalAmt) || 0 })
       });
       if (response.ok) {
-        setProposalMsg(''); setProposalAmt(''); fetchDeals(); 
+        setProposalMsg(''); setProposalAmt(''); fetchDeals();
       }
     } catch (err) { console.error(err); }
   };
@@ -103,7 +108,7 @@ const DealsPage = () => {
   };
 
   const handleUpdateStatus = async (newStatus) => {
-    if(!window.confirm(`Mark this deal as ${newStatus}?`)) return;
+    if (!window.confirm(`Mark this deal as ${newStatus}?`)) return;
     try {
       const response = await apiClient.put(`/deals/${activeDeal._id}/status`, {
         body: JSON.stringify({ status: newStatus })
@@ -114,7 +119,7 @@ const DealsPage = () => {
 
   // DELETE DEAL
   const handleDeleteDeal = async () => {
-    if(!window.confirm(`Are you absolutely sure you want to permanently destroy this Deal Room?`)) return;
+    if (!window.confirm(`Are you absolutely sure you want to permanently destroy this Deal Room?`)) return;
     try {
       const response = await apiClient.delete(`/deals/${activeDeal._id}`);
       if (response.ok) {
@@ -130,7 +135,7 @@ const DealsPage = () => {
   };
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'Open': return 'text-blue-400 bg-blue-500/10 border-blue-500/30';
       case 'Negotiating': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
       case 'Accepted': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
@@ -144,7 +149,7 @@ const DealsPage = () => {
 
   return (
     <div className="min-h-screen bg-[#050810] text-gray-200 font-sans selection:bg-blue-500/30 flex flex-col h-screen overflow-hidden">
-      
+
       <nav className="shrink-0 z-50 backdrop-blur-xl bg-[#050810]/70 border-b border-white/5 p-4 flex justify-between items-center">
         <div className="flex items-center gap-6">
           <Link to="/dashboard" className="p-2 text-gray-400 hover:text-blue-400 transition bg-white/5 rounded-full">
@@ -161,7 +166,7 @@ const DealsPage = () => {
       </nav>
 
       <div className="flex-1 flex overflow-hidden">
-        
+
         <aside className="w-full md:w-1/3 lg:w-1/4 border-r border-white/5 bg-[#0a0f1c]/50 overflow-y-auto">
           <div className="p-4 border-b border-white/5">
             <h2 className="text-xs font-mono text-gray-500 uppercase tracking-widest">Active Negotiations</h2>
@@ -171,7 +176,7 @@ const DealsPage = () => {
           ) : (
             <div className="flex flex-col">
               {deals.map(deal => (
-                <button 
+                <button
                   key={deal._id} onClick={() => setActiveDeal(deal)}
                   className={`p-5 text-left border-b border-white/5 hover:bg-white/5 transition relative ${activeDeal?._id === deal._id ? 'bg-blue-600/10 border-l-2 border-l-blue-500' : 'border-l-2 border-l-transparent'}`}
                 >
@@ -209,7 +214,7 @@ const DealsPage = () => {
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   {(activeDeal.status === 'Open' || activeDeal.status === 'Negotiating') && (
                     <>
@@ -218,7 +223,7 @@ const DealsPage = () => {
                     </>
                   )}
                   {activeDeal.initiator === loggedInUser.id && (
-                    <button onClick={handleDeleteDeal} className="ml-2 p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition" title="Destroy Room"><Trash2 size={16}/></button>
+                    <button onClick={handleDeleteDeal} className="ml-2 p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition" title="Destroy Room"><Trash2 size={16} /></button>
                   )}
                 </div>
               </div>
@@ -242,14 +247,14 @@ const DealsPage = () => {
 
                 {/* Shared Documents Display */}
                 {activeDeal.documents?.length > 0 && (
-                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-4">
-                     {activeDeal.documents.map((docPath, i) => (
-                        <a href={`https://bizferbine-backend.onrender.com/${docPath}`} target="_blank" rel="noreferrer" key={i} className="bg-white/5 border border-white/10 hover:border-blue-500/50 p-4 rounded-xl flex items-center gap-3 transition group">
-                           <div className="p-2 bg-blue-500/10 text-blue-400 rounded-lg group-hover:scale-110 transition"><FileText size={16}/></div>
-                           <div className="text-xs text-gray-300 font-mono truncate">Doc_Vector_{i+1}</div>
-                        </a>
-                     ))}
-                   </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-4">
+                    {activeDeal.documents.map((docPath, i) => (
+                      <a href={`https://bizferbine-backend.onrender.com/${docPath}`} target="_blank" rel="noreferrer" key={i} className="bg-white/5 border border-white/10 hover:border-blue-500/50 p-4 rounded-xl flex items-center gap-3 transition group">
+                        <div className="p-2 bg-blue-500/10 text-blue-400 rounded-lg group-hover:scale-110 transition"><FileText size={16} /></div>
+                        <div className="text-xs text-gray-300 font-mono truncate">Doc_Vector_{i + 1}</div>
+                      </a>
+                    ))}
+                  </div>
                 )}
 
                 {activeDeal.proposals.map((prop, idx) => {
@@ -276,7 +281,7 @@ const DealsPage = () => {
               {/* INPUT AREA */}
               {(activeDeal.status === 'Open' || activeDeal.status === 'Negotiating') ? (
                 <div className="p-4 bg-[#0a0f1c]/90 border-t border-white/5 backdrop-blur-xl shrink-0 z-10 flex gap-4 items-center">
-                  
+
                   {/* DOCUMENT UPLOAD BUTTON */}
                   <label className={`p-3 rounded-xl border border-white/10 text-gray-400 hover:text-blue-400 hover:border-blue-500/30 transition cursor-pointer ${isUploading ? 'opacity-50' : ''}`}>
                     <Paperclip size={20} />
@@ -284,15 +289,15 @@ const DealsPage = () => {
                   </label>
 
                   <form onSubmit={handleSendProposal} className="flex-1 flex gap-4">
-                    <input 
-                      type="text" required placeholder="Transmit encrypted proposal..." 
+                    <input
+                      type="text" required placeholder="Transmit encrypted proposal..."
                       value={proposalMsg} onChange={(e) => setProposalMsg(e.target.value)}
                       className="flex-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition"
                     />
                     <div className="w-40 relative">
-                      <span className="absolute left-4 top-3.5 text-gray-500"><DollarSign size={14}/></span>
-                      <input 
-                        type="number" placeholder="Amount (Opt)" 
+                      <span className="absolute left-4 top-3.5 text-gray-500"><DollarSign size={14} /></span>
+                      <input
+                        type="number" placeholder="Amount (Opt)"
                         value={proposalAmt} onChange={(e) => setProposalAmt(e.target.value)}
                         className="w-full h-full bg-black border border-white/10 rounded-xl pl-9 pr-4 text-sm text-emerald-400 focus:outline-none focus:border-emerald-500 transition font-mono"
                       />
@@ -317,7 +322,7 @@ const DealsPage = () => {
         <div className="fixed inset-0 z-[100] flex justify-center items-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-lg bg-[#0a0f1c] border border-white/10 rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
             <h2 className="text-xl font-black text-white tracking-tight mb-6">INITIALIZE SECURE DEAL ROOM</h2>
-            
+
             {createError && (
               <div className="mb-6 bg-red-500/10 border border-red-500/50 rounded-xl p-4 flex items-start gap-3 text-sm text-red-200">
                 <AlertCircle size={20} className="text-red-400 shrink-0" /> {createError}
@@ -326,21 +331,34 @@ const DealsPage = () => {
 
             <form onSubmit={handleCreateDeal} className="space-y-4">
               <div>
-                <label className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">Project / Deal Name</label>
-                <input required type="text" value={newDealForm.title} onChange={(e) => setNewDealForm({...newDealForm, title: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none mt-1" />
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Deal Title</label>
+                <input required type="text" placeholder="e.g. SaaS Integration Partnership" value={newDealForm.title} onChange={(e) => setNewDealForm({ ...newDealForm, title: e.target.value })} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-[#185fa5] focus:ring-2 focus:ring-[#185fa5]/20 outline-none transition" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Deal Type</label>
+                  <select value={newDealForm.type} onChange={(e) => setNewDealForm({ ...newDealForm, type: e.target.value })} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-[#185fa5] focus:ring-2 focus:ring-[#185fa5]/20 outline-none transition bg-white">
+                    <option>Partnership</option>
+                    <option>Licensing</option>
+                    <option>Distribution</option>
+                    <option>Investment</option>
+                    <option>Service Agreement</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Initial Value ($)</label>
+                  <input type="number" placeholder="e.g. 50000" value={newDealForm.amount} onChange={(e) => setNewDealForm({ ...newDealForm, amount: e.target.value })} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-[#185fa5] focus:ring-2 focus:ring-[#185fa5]/20 outline-none transition" />
+                </div>
               </div>
               <div>
-                <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Terms & Scope</label>
-                <textarea required rows="4" value={newDealForm.description} onChange={(e) => setNewDealForm({...newDealForm, description: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none resize-none mt-1" />
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Counterparty (User ID)</label>
+                <input type="text" placeholder="Company or person ID" value={newDealForm.targetParticipantId} onChange={(e) => setNewDealForm({ ...newDealForm, targetParticipantId: e.target.value })} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-[#185fa5] focus:ring-2 focus:ring-[#185fa5]/20 outline-none transition" />
               </div>
               <div>
-                <label className="text-[10px] font-mono text-purple-400 uppercase tracking-widest">Invite Counterparty (User ID) - Optional</label>
-                <input type="text" placeholder="e.g. 64b7c8f9..." value={newDealForm.targetParticipantId} onChange={(e) => setNewDealForm({...newDealForm, targetParticipantId: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-purple-500 outline-none mt-1 font-mono" />
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Description</label>
+                <textarea required rows="3" placeholder="Describe the deal, goals, and expected outcomes..." value={newDealForm.description} onChange={(e) => setNewDealForm({ ...newDealForm, description: e.target.value })} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:border-[#185fa5] focus:ring-2 focus:ring-[#185fa5]/20 outline-none resize-none transition" />
               </div>
-              <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setIsCreateOpen(false)} className="flex-1 bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl text-sm font-bold transition">Cancel</button>
-                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-sm font-bold transition shadow-[0_0_15px_rgba(37,99,235,0.4)]">Launch Room</button>
-              </div>
+              <button type="submit" className="w-full bg-[#185fa5] hover:bg-[#0c447c] text-white py-3 rounded-lg text-sm font-bold transition mt-2 flex items-center justify-center gap-2">Submit Proposal <Send size={14} /></button>
             </form>
           </div>
         </div>

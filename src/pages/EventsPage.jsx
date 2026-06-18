@@ -17,10 +17,18 @@ const EventsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createError, setCreateError] = useState('');
 
+  // Registration Modal State
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [registerEvent, setRegisterEvent] = useState(null);
+  const [selectedTier, setSelectedTier] = useState('General');
+
   const [formData, setFormData] = useState({
     title: '', description: '', type: 'Online', locationOrLink: '',
-    date: '', ticketPrice: 0, maxCapacity: 100,
-    acceptsSponsors: false, sponsorshipPrice: 0
+    date: '', acceptsSponsors: false, sponsorshipPrice: 0,
+    ticketTiers: [
+      { name: 'General', price: 0, capacity: 100, perks: 'Standard access to main lobby & networking.' },
+      { name: 'VIP', price: 0, capacity: 50, perks: 'Front seating, VIP lounge, and post-event dinner.' }
+    ]
   });
 
   // Event Operating System State
@@ -130,13 +138,19 @@ const EventsPage = () => {
 
       if (response.ok) {
         setIsCreateOpen(false);
-        setFormData({ title: '', description: '', type: 'Online', locationOrLink: '', date: '', ticketPrice: 0, maxCapacity: 100, acceptsSponsors: false, sponsorshipPrice: 0 });
+        setFormData({ title: '', description: '', type: 'Online', locationOrLink: '', date: '', acceptsSponsors: false, sponsorshipPrice: 0, ticketTiers: [{ name: 'General', price: 0, capacity: 100, perks: 'Standard access to main lobby & networking.' }, { name: 'VIP', price: 0, capacity: 50, perks: 'Front seating, VIP lounge, and post-event dinner.' }] });
         fetchEvents();
       } else {
         setCreateError(data.message || 'Failed to create event.');
       }
     } catch (err) { setCreateError('Server Connection Error.'); }
     finally { setIsSubmitting(false); }
+  };
+
+  const handleTierChange = (index, field, value) => {
+    const newTiers = [...formData.ticketTiers];
+    newTiers[index][field] = (field === 'price' || field === 'capacity') ? Number(value) : value;
+    setFormData({ ...formData, ticketTiers: newTiers });
   };
 
   // FETCH OPERATING SYSTEM DATA
@@ -173,6 +187,38 @@ const EventsPage = () => {
       }
     } catch (err) { console.error(err); }
     finally { setIsIntentSubmitting(false); }
+  };
+
+  // REGISTER FOR EVENT (TIERED)
+  const handleConfirmRegistration = async () => {
+    setIsSubmitting(true);
+    try {
+      let price = registerEvent.ticketTiers?.find(t => t.name === selectedTier)?.price || registerEvent.ticketPrice || 0;
+
+      if (price > 0) {
+        const payRes = await apiClient.post('/payments/create-checkout-session', {
+          body: JSON.stringify({ eventTitle: registerEvent.title, ticketPrice: price, tier: selectedTier })
+        });
+        const payData = await payRes.json();
+        if (payRes.ok && payData.checkoutUrl) {
+          alert(`Initializing Secure Escrow Protocol...\nRedirecting to Stripe Gateway: ${payData.checkoutUrl}`);
+        }
+      }
+
+      const response = await apiClient.post(`/events/${registerEvent._id}/register`, {
+        body: JSON.stringify({ paymentSuccess: true, tierName: selectedTier })
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(`Successfully secured ${selectedTier} Admission!`);
+        setIsRegisterOpen(false);
+        fetchEvents();
+      } else {
+        alert(data.message || 'Registration failed.');
+      }
+    } catch (err) { console.error("Registration error:", err); }
+    finally { setIsSubmitting(false); }
   };
 
   // REGISTER AS SPONSOR
@@ -662,9 +708,18 @@ const EventsPage = () => {
                       </button>
                     ) : (
                       <>
+                        {!isRegistered && (
+                          <button onClick={() => { setRegisterEvent(event); setSelectedTier(event.ticketTiers?.[0]?.name || 'General'); setIsRegisterOpen(true); }} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.4)] mb-2">
+                            <Ticket size={16} /> Register Now
+                          </button>
+                        )}
                         {/* THE NEW OS ACCESS BUTTON */}
-                        <button onClick={() => { setActiveOsEvent(event); fetchOperatingSystem(event._id); }} className="w-full bg-white/5 hover:bg-emerald-600/20 border border-white/10 hover:border-emerald-500/50 text-white hover:text-emerald-400 py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2">
-                          <Cpu size={16} /> Access Event OS
+                        <button disabled={!isRegistered && !isSponsor} onClick={() => { setActiveOsEvent(event); fetchOperatingSystem(event._id); }} className={`w-full py-3 rounded-xl text-xs font-bold transition flex justify-center items-center gap-2 ${isRegistered || isSponsor ? 'bg-white/5 hover:bg-emerald-600/20 border border-white/10 hover:border-emerald-500/50 text-white hover:text-emerald-400 cursor-pointer' : 'bg-black/30 border border-white/5 text-gray-600 cursor-not-allowed'}`}>
+                          {isRegistered || isSponsor ? (
+                            <><Cpu size={16} /> Access Event OS</>
+                          ) : (
+                            <span className="text-[10px] font-mono tracking-widest uppercase flex items-center gap-2">🔒 Secure Link</span>
+                          )}
                         </button>
 
                         {/* OPTIONAL: Sponsor Button Kept for Escrow Logic */}
@@ -730,16 +785,27 @@ const EventsPage = () => {
                   <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Date & Time</label>
                   <input required type="datetime-local" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:border-emerald-500 outline-none transition [color-scheme:dark]" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Ticket ($)</label>
-                    <input type="number" min="0" value={formData.ticketPrice} onChange={(e) => setFormData({ ...formData, ticketPrice: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition font-mono" />
+              </div>
+
+              {/* TIERED TICKETING SYSTEM */}
+              <div className="pt-4 border-t border-white/5 space-y-4">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2"><Ticket size={16} className="text-emerald-400" /> Enterprise Ticketing Tiers</h3>
+
+                {formData.ticketTiers.map((tier, index) => (
+                  <div key={tier.name} className="bg-black/40 border border-white/5 p-4 rounded-2xl space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className={`text-xs font-bold uppercase tracking-widest ${index === 1 ? 'text-purple-400' : 'text-emerald-400'}`}>{tier.name} Admission</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5"><label className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">Price ($)</label><input required type="number" min="0" value={tier.price} onChange={(e) => handleTierChange(index, 'price', e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-emerald-500 outline-none transition font-mono" /></div>
+                      <div className="space-y-1.5"><label className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">Seat Allocation</label><input required type="number" min="1" value={tier.capacity} onChange={(e) => handleTierChange(index, 'capacity', e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-emerald-500 outline-none transition font-mono" /></div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">Perks & Access Strings</label>
+                      <input required type="text" value={tier.perks} onChange={(e) => handleTierChange(index, 'perks', e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-emerald-500 outline-none transition" />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Capacity</label>
-                    <input required type="number" min="1" value={formData.maxCapacity} onChange={(e) => setFormData({ ...formData, maxCapacity: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500 outline-none transition font-mono" />
-                  </div>
-                </div>
+                ))}
               </div>
 
               <div className="p-4 border border-purple-500/30 bg-purple-900/10 rounded-2xl space-y-4 mt-4">
@@ -765,6 +831,47 @@ const EventsPage = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ENTERPRISE REGISTRATION MODAL */}
+      {isRegisterOpen && registerEvent && (
+        <div className="fixed inset-0 z-[100] flex justify-center items-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-xl bg-[#0a0f1c] border border-white/10 rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-start mb-6 border-b border-white/5 pb-4">
+              <div>
+                <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                  <Ticket className="text-emerald-400" /> SECURE ADMISSION
+                </h2>
+                <p className="text-gray-400 text-sm mt-1">{registerEvent.title}</p>
+              </div>
+              <button onClick={() => setIsRegisterOpen(false)} className="text-gray-500 hover:text-white transition"><XCircle size={20} /></button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              {registerEvent.ticketTiers && registerEvent.ticketTiers.length > 0 ? registerEvent.ticketTiers.map((tier, idx) => (
+                <label key={tier.name} className={`relative border rounded-2xl p-5 cursor-pointer transition-all duration-200 overflow-hidden ${selectedTier === tier.name ? 'border-emerald-500 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.15)]' : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'}`}>
+                  <input type="radio" name="ticketTier" value={tier.name} checked={selectedTier === tier.name} onChange={(e) => setSelectedTier(e.target.value)} className="hidden" />
+                  {idx === 1 && <div className="absolute top-0 right-0 bg-purple-500/20 text-purple-400 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-xl border-b border-l border-purple-500/30">Premium</div>}
+                  <div className="text-xs font-mono uppercase tracking-widest text-gray-400 mb-1">{tier.name}</div>
+                  <div className="text-3xl font-black text-white mb-3">${tier.price}</div>
+                  <p className="text-[11px] text-gray-300 leading-relaxed min-h-[40px]">{tier.perks}</p>
+                  <div className="mt-4 pt-4 border-t border-white/5 text-[10px] font-mono text-gray-500 uppercase tracking-widest">{tier.capacity} Seats Allocated</div>
+                </label>
+              )) : (
+                <label className={`col-span-full relative border rounded-2xl p-5 cursor-pointer transition-all duration-200 border-emerald-500 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.15)]`}>
+                  <input type="radio" name="ticketTier" value="General" checked readOnly className="hidden" />
+                  <div className="text-xs font-mono uppercase tracking-widest text-emerald-400 mb-1">Standard Admission</div>
+                  <div className="text-3xl font-black text-white mb-3">${registerEvent.ticketPrice || 0}</div>
+                  <p className="text-[11px] text-emerald-100/80 leading-relaxed min-h-[40px]">Base level access to event timeline, standard matchmaking, and general networking zones.</p>
+                </label>
+              )}
+            </div>
+
+            <button onClick={handleConfirmRegistration} disabled={isSubmitting} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.4)]">
+              {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /> Confirm Registration Allocation</>}
+            </button>
           </div>
         </div>
       )}

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  ChevronLeft, BrainCircuit, Users, Send, CheckCircle2,
+  ChevronLeft, BrainCircuit, Users, Send, CheckCircle2, RefreshCcw,
   XCircle, Search, Plus, Calendar, Clock, Loader2,
   Sparkles, Star, Target, MessageSquare, ShieldCheck, Award
 } from 'lucide-react';
@@ -20,6 +20,14 @@ const MentorshipPage = () => {
   // Form States
   const [applyForm, setApplyForm] = useState({ title: '', description: '' });
   const [isApplying, setIsApplying] = useState(false);
+
+  // Quiz State
+  const [showQuiz, setShowQuiz] = useState(true);
+  const [quizStep, setQuizStep] = useState(1);
+  const [quizAnswers, setQuizAnswers] = useState({
+    goals: [], industry: '', stage: '', location: '', communication: ''
+  });
+  const [isMatching, setIsMatching] = useState(false);
 
   // Offer Modal State
   const [activeOfferApp, setActiveOfferApp] = useState(null);
@@ -41,18 +49,6 @@ const MentorshipPage = () => {
     } catch (err) { console.error(err); }
   };
 
-  const fetchMatches = async () => {
-    setLoading(true);
-    try {
-      const res = await apiClient.get('/mentorship-board/matches');
-      if (res.ok) {
-        const data = await res.json();
-        setAlgorithmicMatches(data.matches || []);
-      }
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
-  };
-
   useEffect(() => {
     if (!loggedInUser?.id) navigate('/login');
     else {
@@ -60,10 +56,6 @@ const MentorshipPage = () => {
       setLoading(false);
     }
   }, [navigate]);
-
-  useEffect(() => {
-    if (activeTab === 'matchmaker') fetchMatches();
-  }, [activeTab]);
 
   // --- ACTIONS ---
   const handleApply = async (e) => {
@@ -85,17 +77,42 @@ const MentorshipPage = () => {
     finally { setIsApplying(false); }
   };
 
+  const handleQuizSubmit = async () => {
+    setIsMatching(true);
+    setShowQuiz(false);
+    try {
+      const res = await apiClient.post('/mentorship/match', {
+        body: JSON.stringify(quizAnswers)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAlgorithmicMatches(data.matches || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsMatching(false);
+    }
+  };
+
   const handleSendOffer = async (e) => {
     e.preventDefault();
     try {
-      const res = await apiClient.post(`/mentorship-board/${activeOfferApp._id}/offer`, {
-        body: JSON.stringify({ message: offerMessage })
-      });
+      let res;
+      if (activeOfferApp.mentee) {
+        res = await apiClient.post(`/mentorship-board/${activeOfferApp._id}/offer`, {
+          body: JSON.stringify({ message: offerMessage })
+        });
+      } else {
+        res = await apiClient.post(`/mentorship/request`, {
+          body: JSON.stringify({ mentorId: activeOfferApp._id, message: offerMessage, scheduledSession: new Date() })
+        });
+      }
+
       if (res.ok) {
-        alert('Offer Sent to Mentee!');
+        alert(activeOfferApp.mentee ? 'Offer Sent to Mentee!' : 'Mentorship Request Sent!');
         setActiveOfferApp(null);
         setOfferMessage('');
-        fetchMatches();
       } else {
         const data = await res.json();
         alert(data.message);
@@ -286,59 +303,165 @@ const MentorshipPage = () => {
         {/* TAB 3: MENTOR MATCHMAKER (With Trust UI) */}
         {activeTab === 'matchmaker' && (
           <div className="space-y-6 animate-in fade-in">
-            <div className="bg-gradient-to-r from-blue-900/30 to-indigo-900/10 border border-blue-500/20 p-6 rounded-3xl mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2"><Sparkles className="text-blue-400" /> Network Scanning Active</h2>
-                <p className="text-sm text-blue-200/70">The algorithm has found users broadcasting goals that match your expertise profile.</p>
-              </div>
-              <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-bold transition border border-white/10 whitespace-nowrap">
-                Update My Expertise
-              </button>
-            </div>
+            {showQuiz ? (
+              <div className="max-w-2xl mx-auto bg-gradient-to-br from-blue-900/20 to-purple-900/10 border border-blue-500/30 rounded-3xl p-8 shadow-2xl animate-in fade-in">
+                <div className="flex justify-between items-center mb-8">
+                  <h2 className="text-xl font-black text-white flex items-center gap-2">
+                    <Sparkles className="text-blue-400" /> Mentor Matchmaker
+                  </h2>
+                  <span className="text-xs font-mono text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">Step {quizStep} of 5</span>
+                </div>
 
-            {loading ? (
-              <div className="text-center py-10"><Loader2 size={32} className="animate-spin text-blue-400 mx-auto" /></div>
-            ) : algorithmicMatches.length === 0 ? (
-              <div className="text-center py-20 border border-dashed border-white/10 rounded-3xl bg-[#0a0f1c]/50">
-                <Search size={48} className="mx-auto text-gray-600 mb-4" />
-                <p className="text-gray-500 font-mono text-sm uppercase tracking-widest mb-4">No exact industry matches found right now.</p>
-                <button className="text-blue-400 text-sm font-bold hover:underline">Browse Global Directory</button>
+                <div className="w-full bg-black/50 rounded-full h-1.5 mb-8 overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-300" style={{ width: `${(quizStep / 5) * 100}%` }}></div>
+                </div>
+
+                {quizStep === 1 && (
+                  <div className="space-y-6 animate-in slide-in-from-right-4">
+                    <div>
+                      <h3 className="text-2xl font-bold text-white mb-2">What is your primary networking goal?</h3>
+                      <p className="text-sm text-gray-400">Select the main area where you need guidance.</p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {['Scaling B2B Sales', 'Fundraising', 'Global Expansion', 'Product-Market Fit', 'Leadership Development'].map(goal => (
+                        <button key={goal} onClick={() => { setQuizAnswers({ ...quizAnswers, goals: [goal] }); setQuizStep(2); }} className={`p-4 rounded-xl border text-left transition-all ${quizAnswers.goals.includes(goal) ? 'bg-blue-600/20 border-blue-500 text-white' : 'bg-black/40 border-white/5 text-gray-300 hover:bg-white/5 hover:border-white/20'}`}>
+                          <span className="font-bold">{goal}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {quizStep === 2 && (
+                  <div className="space-y-6 animate-in slide-in-from-right-4">
+                    <div>
+                      <h3 className="text-2xl font-bold text-white mb-2">Preferred Industry Vertical?</h3>
+                      <p className="text-sm text-gray-400">Which industry should your mentor have experience in?</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {['Technology/SaaS', 'Finance/FinTech', 'Healthcare', 'Retail/E-commerce', 'Real Estate', 'Manufacturing'].map(ind => (
+                        <button key={ind} onClick={() => { setQuizAnswers({ ...quizAnswers, industry: ind }); setQuizStep(3); }} className={`p-4 rounded-xl border text-left transition-all ${quizAnswers.industry === ind ? 'bg-blue-600/20 border-blue-500 text-white' : 'bg-black/40 border-white/5 text-gray-300 hover:bg-white/5 hover:border-white/20'}`}>
+                          <span className="font-bold">{ind}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {quizStep === 3 && (
+                  <div className="space-y-6 animate-in slide-in-from-right-4">
+                    <div>
+                      <h3 className="text-2xl font-bold text-white mb-2">What is your current stage?</h3>
+                      <p className="text-sm text-gray-400">Helps us match you with someone who has been there recently.</p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {['Idea / Pre-seed', 'Seed / Early Stage', 'Growth / Series A+', 'Mature / Enterprise'].map(stage => (
+                        <button key={stage} onClick={() => { setQuizAnswers({ ...quizAnswers, stage }); setQuizStep(4); }} className={`p-4 rounded-xl border text-left transition-all ${quizAnswers.stage === stage ? 'bg-blue-600/20 border-blue-500 text-white' : 'bg-black/40 border-white/5 text-gray-300 hover:bg-white/5 hover:border-white/20'}`}>
+                          <span className="font-bold">{stage}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {quizStep === 4 && (
+                  <div className="space-y-6 animate-in slide-in-from-right-4">
+                    <div>
+                      <h3 className="text-2xl font-bold text-white mb-2">Geographic Target Interest?</h3>
+                      <p className="text-sm text-gray-400">Does location matter for your mentorship?</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {['Local / Regional', 'National', 'Global / International', 'Remote / Async'].map(loc => (
+                        <button key={loc} onClick={() => { setQuizAnswers({ ...quizAnswers, location: loc }); setQuizStep(5); }} className={`p-4 rounded-xl border text-left transition-all ${quizAnswers.location === loc ? 'bg-blue-600/20 border-blue-500 text-white' : 'bg-black/40 border-white/5 text-gray-300 hover:bg-white/5 hover:border-white/20'}`}>
+                          <span className="font-bold">{loc}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {quizStep === 5 && (
+                  <div className="space-y-6 animate-in slide-in-from-right-4">
+                    <div>
+                      <h3 className="text-2xl font-bold text-white mb-2">Communication Style Preference?</h3>
+                      <p className="text-sm text-gray-400">How do you prefer to interact?</p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {['Weekly 1:1 Video Calls', 'Async Text/Voice', 'Monthly Check-ins', 'Hands-on tactical'].map(comm => (
+                        <button key={comm} onClick={() => setQuizAnswers({ ...quizAnswers, communication: comm })} className={`p-4 rounded-xl border text-left transition-all ${quizAnswers.communication === comm ? 'bg-blue-600/20 border-blue-500 text-white' : 'bg-black/40 border-white/5 text-gray-300 hover:bg-white/5 hover:border-white/20'}`}>
+                          <span className="font-bold">{comm}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="pt-4 border-t border-white/5 flex gap-3">
+                      <button onClick={() => setQuizStep(4)} className="px-6 py-3 rounded-xl border border-white/10 text-white hover:bg-white/5 font-bold transition">Back</button>
+                      <button disabled={!quizAnswers.communication || isMatching} onClick={handleQuizSubmit} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,99,235,0.4)] disabled:opacity-50">
+                        {isMatching ? <Loader2 size={18} className="animate-spin" /> : 'Find My Match'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {algorithmicMatches.map(app => (
-                  <div key={app._id} className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-6 hover:border-blue-500/30 transition-all flex flex-col group">
-                    <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 p-[2px]">
-                          <div className="w-full h-full rounded-full bg-[#050810] flex items-center justify-center font-bold text-white text-lg">
-                            {app.mentee?.name?.charAt(0)}
+              <>
+                <div className="bg-gradient-to-r from-blue-900/30 to-indigo-900/10 border border-blue-500/20 p-6 rounded-3xl mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2"><Sparkles className="text-blue-400" /> AI Matches Generated</h2>
+                    <p className="text-sm text-blue-200/70">Based on your quiz results, we found these mentors in our network.</p>
+                  </div>
+                  <button onClick={() => { setShowQuiz(true); setQuizStep(1); }} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-bold transition border border-white/10 whitespace-nowrap flex items-center gap-2">
+                    <RefreshCcw size={14} /> Retake Quiz
+                  </button>
+                </div>
+
+                {isMatching ? (
+                  <div className="text-center py-20"><Loader2 size={32} className="animate-spin text-blue-400 mx-auto mb-4" /><p className="text-blue-400 font-mono text-sm tracking-widest uppercase animate-pulse">Running Match Algorithm...</p></div>
+                ) : algorithmicMatches.length === 0 ? (
+                  <div className="text-center py-20 border border-dashed border-white/10 rounded-3xl bg-[#0a0f1c]/50">
+                    <Search size={48} className="mx-auto text-gray-600 mb-4" />
+                    <p className="text-gray-500 font-mono text-sm uppercase tracking-widest mb-4">No exact matches found right now.</p>
+                    <button onClick={() => { setShowQuiz(true); setQuizStep(1); }} className="text-blue-400 text-sm font-bold hover:underline">Adjust Parameters</button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {algorithmicMatches.map(app => (
+                      <div key={app._id} className="bg-[#0a0f1c] border border-white/10 rounded-3xl p-6 hover:border-blue-500/30 transition-all flex flex-col group">
+                        <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 p-[2px]">
+                              <div className="w-full h-full rounded-full bg-[#050810] flex items-center justify-center font-bold text-white text-xl">
+                                {app.name?.charAt(0) || app.mentee?.name?.charAt(0) || 'M'}
+                              </div>
+                            </div>
+                            <div>
+                              <h3 className="text-base font-bold text-white flex items-center gap-1">
+                                {app.name || app.mentee?.name} <ShieldCheck size={14} className="text-blue-400" />
+                              </h3>
+                              <p className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">{app.industry || 'General'}</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <div className="flex items-center gap-1 text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded-md mb-1">
+                              <Star size={12} className="fill-yellow-400" /> <span className="text-xs font-bold">{app.rating || '5.0'}</span>
+                            </div>
                           </div>
                         </div>
-                        <div>
-                          <h3 className="text-base font-bold text-white flex items-center gap-1">
-                            {app.mentee?.name} <ShieldCheck size={14} className="text-blue-400" />
-                          </h3>
-                          <p className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">{app.industry}</p>
-                        </div>
-                      </div>
-                      {/* Trust Marker Mockup */}
-                      <div className="flex flex-col items-end">
-                        <div className="flex items-center gap-1 text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded-md mb-1">
-                          <Star size={12} className="fill-yellow-400" /> <span className="text-xs font-bold">New</span>
-                        </div>
-                      </div>
-                    </div>
 
-                    <h4 className="text-md font-bold text-white mb-2">{app.title}</h4>
-                    <p className="text-sm text-gray-400 mb-6 flex-1 line-clamp-3">{app.description}</p>
+                        <p className="text-sm text-gray-400 mb-6 flex-1 line-clamp-3">{app.bio || app.description || "Experienced professional ready to share insights and accelerate your growth."}</p>
 
-                    <button onClick={() => setActiveOfferApp(app)} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-lg group-hover:shadow-[0_0_20px_rgba(37,99,235,0.3)]">
-                      <Send size={16} /> Dispatch Mentorship Offer
-                    </button>
+                        <div className="flex flex-wrap gap-2 mb-6">
+                          {quizAnswers.goals.map(g => <span key={g} className="bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] px-2 py-1 rounded-md font-mono uppercase">{g}</span>)}
+                          {quizAnswers.industry && <span className="bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] px-2 py-1 rounded-md font-mono uppercase">{quizAnswers.industry}</span>}
+                        </div>
+
+                        <button onClick={() => setActiveOfferApp(app)} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-lg group-hover:shadow-[0_0_20px_rgba(37,99,235,0.3)]">
+                          <Send size={16} /> {app.mentee ? 'Dispatch Mentorship Offer' : 'Request Mentorship'}
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -373,21 +496,21 @@ const MentorshipPage = () => {
       {activeOfferApp && (
         <div className="fixed inset-0 z-[100] flex justify-center items-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-lg bg-[#0a0f1c] border border-blue-500/30 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.15)] p-8 animate-in zoom-in-95 duration-200">
-            <h2 className="text-xl font-black text-white tracking-tight mb-2">Draft Mentorship Offer</h2>
-            <p className="text-sm text-gray-400 mb-6">Offering guidance to <span className="text-blue-400 font-bold">{activeOfferApp.mentee?.name}</span></p>
+            <h2 className="text-xl font-black text-white tracking-tight mb-2">{activeOfferApp.mentee ? 'Draft Mentorship Offer' : 'Draft Mentorship Request'}</h2>
+            <p className="text-sm text-gray-400 mb-6">{activeOfferApp.mentee ? 'Offering guidance to' : 'Requesting guidance from'} <span className="text-blue-400 font-bold">{activeOfferApp.name || activeOfferApp.mentee?.name}</span></p>
 
             <form onSubmit={handleSendOffer} className="space-y-4">
               <textarea
                 required rows="4"
                 value={offerMessage}
                 onChange={(e) => setOfferMessage(e.target.value)}
-                placeholder="Introduce yourself, explain how your experience aligns with their problem, and propose a next step..."
+                placeholder={activeOfferApp.mentee ? "Introduce yourself, explain how your experience aligns with their problem, and propose a next step..." : "Introduce yourself, explain your goals, and propose a next step..."}
                 className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none resize-none transition"
               />
               <div className="flex gap-3">
                 <button type="button" onClick={() => setActiveOfferApp(null)} className="flex-1 bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl text-sm font-bold transition">Cancel</button>
                 <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.4)]">
-                  <Send size={16} /> Dispatch Offer
+                  <Send size={16} /> Transmit
                 </button>
               </div>
             </form>
