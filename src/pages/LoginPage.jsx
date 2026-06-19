@@ -25,7 +25,6 @@ const LoginPage = () => {
       // 2. Check if the login was successful
       if (response.ok) {
         // Save the Digital ID Card (Token) in the browser's memory
-        localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
 
         // Send the user to the main platform!
@@ -47,7 +46,6 @@ const LoginPage = () => {
       });
       const data = await response.json();
       if (response.ok) {
-        localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         navigate('/dashboard');
       } else {

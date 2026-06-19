@@ -1,13 +1,12 @@
 const BASE_URL = 'https://bizferbine-backend.onrender.com/api';
 
 async function request(endpoint, options = {}) {
-  const headers = { ...options.headers };
+  const headers = { ...options.headers, 'Content-Type': 'application/json' };
 
   // Automatically attach Content-Type unless the body is FormData
   if (!(options.body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
+    // headers['Content-Type'] = 'application/json'; // This is now set by default above
   }
-
   const config = {
     ...options,
     headers,
@@ -19,7 +18,6 @@ async function request(endpoint, options = {}) {
   // The Global Interceptor: Handle Unauthorized/Expired Sessions
   if (response.status === 401) {
     localStorage.removeItem('user');
-    localStorage.removeItem('token');
     window.location.href = '/login';
   }
 
